@@ -40,6 +40,37 @@ public class CellAdapter extends RecyclerView.Adapter<CellAdapter.ViewHolder>{
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
+        holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
+        if (sState == PlayState.start) {
+            //holder.mCell.setBackgroundColor(Color.BLACK);
+            return;
+        }
+        if (sState == PlayState.gameOver ||
+                sState == PlayState.victory ||
+                sState == PlayState.cheat) {
+            if (mCells[position].isMine()) {
+                holder.mCell.setBackgroundColor(Color.RED);
+                holder.mCellData.setText("M");
+            } else {
+                holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
+            }
+            return;
+        }
+        if (mCells[position].isMineRecovered()) {
+            holder.mCell.setBackgroundColor(Color.BLUE);
+            holder.mCellData.setText("M");
+            return;
+        }
+        if (mCells[position].isRevealed()) {
+            if (!mCells[position].isMine()) {
+                holder.mCell.setBackgroundColor(Color.GRAY);
+                if (mCells[position].getMineCount() != 0) {
+                    holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
+                }
+                return;
+            }
+        }
+        /*
         if(mCells[position].isRevealed()) {
             if (mCells[position].isMine()) {
                 revealMine(mCells[position], holder);
@@ -75,6 +106,7 @@ public class CellAdapter extends RecyclerView.Adapter<CellAdapter.ViewHolder>{
                     holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
                 }
         }
+        */
     }
 
     @Override

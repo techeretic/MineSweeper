@@ -48,20 +48,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 CellAdapter.sState = CellAdapter.PlayState.inPlay;
-                mCells[position].setIsClicked(true);
-                if (mCells[position].isMine()) {
-                    CellAdapter.sState = CellAdapter.PlayState.gameOver;
-                } else {
-                    int i=position;
-                    while(i < N*N) {
-                        if (!mCells[i].isMine()) {
-                            mCells[i].setIsRevealed(true);
-                            i+=(N-1);
-                        } else {
-                            i+=N/4;
-                        }
-                    }
-                }
+                revealCells(position);
                 mAdapter.notifyDataSetChanged();
             }
 
@@ -74,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
                 if (mCells[position].isMine()) {
                     mMineRecoveryCount++;
                     mCells[position].setIsClicked(true);
-                    mCells[position].setIsRevealed(true);
                     mCells[position].setMineRecovered(true);
                     mAdapter.notifyDataSetChanged();
                     updateScore();
@@ -166,6 +152,10 @@ public class MainActivity extends AppCompatActivity {
         int sum;
         for (int i=0; i<N*N; i++) {
             sum = 0;
+            if (mCells[i].isMine()) {
+                mCells[i].setMineCount(-1);
+                continue;
+            }
             for(Integer j : mCells[i].getNeighbours()) {
                 if (mCells[j].isMine()) {
                     sum++;
@@ -177,5 +167,34 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateScore() {
         mScore.setText("Mines Recovered : " + String.valueOf(mMineRecoveryCount));
+    }
+
+    private void revealCells(int position) {
+        if (mCells[position].isMine()) {
+            CellAdapter.sState = CellAdapter.PlayState.gameOver;
+            return;
+        }
+        mCells[position].setIsRevealed(true);
+        checkAndReveal(position-(N+1), -(N+1));
+        checkAndReveal(position-N, -N);
+        checkAndReveal(position-(N-1), -(N-1));
+        checkAndReveal(position-1, -1);
+        checkAndReveal(position+1, 1);
+        checkAndReveal(position+(N-1), (N-1));
+        checkAndReveal(position+N, N);
+        checkAndReveal(position+(N+1), N+1);
+    }
+
+    private void checkAndReveal(int pos, int from) {
+        if (pos < 0 || (pos-from)%2==0 || (pos-from)%2==(N-1) || pos >= N*N) {
+            Log.d(TAG, "Rejecting " + pos + " where from = " + from);
+            return;
+        }
+        if (mCells[pos].isMine()) {
+            Log.d(TAG, "Rejecting " + pos + " where from = " + from);
+            return;
+        }
+        mCells[pos].setIsRevealed(true);
+        checkAndReveal(pos+from, from);
     }
 }
