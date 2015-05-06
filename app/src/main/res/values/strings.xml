@@ -4,4 +4,6 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="ok">OK</string>
+    <string name="reset">RESET</string>
+    <string name="reveal">REVEAL</string>
 </resources>

@@ -1,5 +1,7 @@
 package prathameshshetye.minesweeper;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -8,21 +10,19 @@ import java.util.List;
 public class Cell {
     private int mNum;
     private boolean mIsMine;
-    private int edge; //0 - Left, 1 - Right, -1 - NoEdge
-    private Coordinate mCoordinate;
+    private boolean mIsClicked;
+    private boolean mIsRevealed;
+    private boolean mMineRecovered;
+    private HashSet<Integer> mNeighbours;
+    private int mMineCount;
     private static final int N = MainActivity.N;
     private static final int M = MainActivity.M;
 
     Cell(int num, boolean isMine) {
         mNum = num;
         mIsMine = isMine;
-        switch(num%N) {
-            case 0: edge = 0;
-                    break;
-            case N-1: edge = 1;
-                    break;
-            default: edge = -1;
-        }
+        mIsClicked = false;
+        mNeighbours = new HashSet<>();
     }
 
     public int getNum() {
@@ -33,69 +33,61 @@ public class Cell {
         return mIsMine;
     }
 
-    public Coordinate getCoordinate() {
-        return mCoordinate;
-    }
-
     public void setIsMine(boolean mIsMine) {
         this.mIsMine = mIsMine;
     }
 
-    public class Coordinate {
-        int x,y;
+    public int getMineCount() {
+        return mMineCount;
+    }
 
-        Coordinate(int x, int y) {
-            this.x = x;
-            this.y = y;
-        }
+    public void setMineCount(int mMineCount) {
+        this.mMineCount = mMineCount;
+    }
 
-        public int getX() {
-            return x;
-        }
+    public boolean isRevealed() {
+        return mIsRevealed;
+    }
 
-        public int getY() {
-            return y;
-        }
+    public void setIsRevealed(boolean mIsRevealed) {
+        this.mIsRevealed = mIsRevealed;
     }
 
     public String getSurroundings() {
         StringBuffer buff = new StringBuffer();
         if (isMine()) {
-            buff.append("Mine");
-        } else {
-            int sum = 0, i=1;
-
-            //top row
-            while(i>-2) {
-                sum = mNum-(N+i);
-                if (sum < (N*N) && sum >= 0) {
-                    buff.append(sum + ",");
-                }
-                i--;
-            }
-            buff.append("\n");
-            //middle row
-            if(mNum-1 < N*N && mNum-1 > 0) {
-                if (mNum%N!=0) {
-                    buff.append(mNum - 1 + ",");
-                }
-            }
-            if(mNum+1 < N*N) {
-                if (mNum%N!=(N-1)) {
-                    buff.append(mNum + 1 + ",");
-                }
-            }
-            buff.append("\n");
-            sum=0;i=-1;
-            //bottom row
-            while(i<2) {
-                sum = mNum+(N+i);
-                if (sum < (N*N) && sum >= 0) {
-                    buff.append(sum + ",");
-                }
-                i++;
+            buff.append("Mine\n");
+        }
+        if (mNeighbours != null) {
+            for(Integer i : mNeighbours) {
+                buff.append(i + ",");
             }
         }
         return buff.toString();
+    }
+
+    public HashSet<Integer> getNeighbours() {
+        return mNeighbours;
+    }
+
+    public boolean isClicked() {
+        return mIsClicked;
+    }
+
+    public void setIsClicked(boolean mIsClicked) {
+        this.mIsClicked = mIsClicked;
+    }
+
+    public boolean isMineRecovered() {
+        return mMineRecovered;
+    }
+
+    public void setMineRecovered(boolean mMineRecovered) {
+        this.mMineRecovered = mMineRecovered;
+    }
+
+    public void addToNeighbours(int val) {
+        if (!mNeighbours.contains(val))
+            mNeighbours.add(val);
     }
 }

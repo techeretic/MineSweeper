@@ -7,9 +7,13 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,74 +22,160 @@ import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
+    private final String TAG = "Sweeper";
     public static final int N=8;
     public static final int M=10;
     private RecyclerView mRecView;
+    private TextView mScore;
     private CellAdapter mAdapter;
     private Cell[] mCells = new Cell[N*N];
+    private int mMineRecoveryCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        final Context context = this;
+        mMineRecoveryCount = 0;
 
-        Random rand = new Random();
-        for(int i=0; i<(N*N); i++) {
-            mCells.[i] = new Cell(i, false);
-        }
-
-        for(int i=0; i<M; i++) {
-            mCells.get(rand.nextInt(N*N)).setIsMine(true);
-        }
         mRecView = (RecyclerView) findViewById(R.id.RecyclerView);
-        mAdapter = new CellAdapter(mCells);
-        mRecView.setAdapter(mAdapter);
-        mRecView.setLayoutManager(new GridLayoutManager(this, 8, GridLayoutManager.VERTICAL, false));
+        mScore = (TextView) findViewById(R.id.score);
 
+        setupMineField();
         mRecView.addOnItemTouchListener(new RecyclerItemClickListener(this, mRecView, new RecyclerItemClickListener.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                builder.setMessage(mCells.get(position).getSurroundings())
-                        .setCancelable(false)
-                        .setPositiveButton(getString(R.string.ok),
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int id) {
-                                        dialog.dismiss();
-                                    }
-                                });
-                AlertDialog alert = builder.create();
-                alert.show();
+                if (CellAdapter.sState == CellAdapter.PlayState.gameOver) {
+                    return;
+                }
+                CellAdapter.sState = CellAdapter.PlayState.inPlay;
+                mCells[position].setIsClicked(true);
+                if (mCells[position].isMine()) {
+                    CellAdapter.sState = CellAdapter.PlayState.gameOver;
+                } else {
+                    int i=position;
+                    while(i < N*N) {
+                        if (!mCells[i].isMine()) {
+                            mCells[i].setIsRevealed(true);
+                            i+=(N-1);
+                        } else {
+                            i+=N/4;
+                        }
+                    }
+                }
+                mAdapter.notifyDataSetChanged();
             }
 
             @Override
             public void onItemLongClick(View view, int position) {
-
+                Log.d(TAG, "Position = " + position + " & is it a MINE? " + mCells[position].isMine());
+                if (mCells[position].isMineRecovered()) {
+                    return;
+                }
+                if (mCells[position].isMine()) {
+                    mMineRecoveryCount++;
+                    mCells[position].setIsClicked(true);
+                    mCells[position].setIsRevealed(true);
+                    mCells[position].setMineRecovered(true);
+                    mAdapter.notifyDataSetChanged();
+                    updateScore();
+                }
             }
         }));
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        if (item.getItemId() == R.id.action_reset) {
+            setupMineField();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void setupMineField() {
+        Random rand = new Random();
+        for(int i=0; i<(N*N); i++) {
+            mCells[i] = new Cell(i, false);
+        }
+
+        for(int i=0; i<M; i++) {
+            int r = rand.nextInt(N*N);
+            if (mCells[r].isMine()) {
+                i--;
+            } else {
+                mCells[r].setIsMine(true);
+            }
+        }
+        prepareNeighbours();
+        prepareMineCount();
+        mAdapter = new CellAdapter(mCells);
+        mRecView.setAdapter(mAdapter);
+        mRecView.setLayoutManager(new GridLayoutManager(this, 8, GridLayoutManager.VERTICAL, false));
+        CellAdapter.sState = CellAdapter.PlayState.start;
+        mScore.setText("Mines Recovered : 0");
+        mMineRecoveryCount=0;
+    }
+
+    private void prepareNeighbours() {
+        int[][] arr = new int [N][N];
+        int k=0;
+        for(int i=0;i<N;i++) {
+            for(int j=0;j<N;j++) {
+                arr[i][j]=mCells[k].getNum();
+                k++;
+            }
+        }
+        //Find Neighbours
+        for(int i=0;i<N;i++) {
+            for(int j=0;j<N;j++) {
+                if ((i-1) >= 0) {
+                    if ((j-1) >= 0) {
+                        mCells[arr[i][j]].addToNeighbours(arr[i-1][j-1]);
+                    }
+                    mCells[arr[i][j]].addToNeighbours(arr[i-1][j]);
+                    if ((j+1)<N) {
+                        mCells[arr[i][j]].addToNeighbours(arr[i-1][j+1]);
+                    }
+                }
+                if ((j-1) >= 0) {
+                    mCells[arr[i][j]].addToNeighbours(arr[i][j-1]);
+                    if ((i+1) < N) {
+                        mCells[arr[i][j]].addToNeighbours(arr[i+1][j-1]);
+                    }
+                }
+                if ((i+1) < N) {
+                    if ((j+1) < N) {
+                        mCells[arr[i][j]].addToNeighbours(arr[i+1][j+1]);
+                    }
+                    mCells[arr[i][j]].addToNeighbours(arr[i+1][j]);
+                }
+                if ((j+1) < N) {
+                    mCells[arr[i][j]].addToNeighbours(arr[i][j+1]);
+                }
+            }
+        }
+    }
+
+    private void prepareMineCount() {
+        int sum;
+        for (int i=0; i<N*N; i++) {
+            sum = 0;
+            for(Integer j : mCells[i].getNeighbours()) {
+                if (mCells[j].isMine()) {
+                    sum++;
+                }
+            }
+            mCells[i].setMineCount(sum);
+        }
+    }
+
+    private void updateScore() {
+        mScore.setText("Mines Recovered : " + String.valueOf(mMineRecoveryCount));
     }
 }
