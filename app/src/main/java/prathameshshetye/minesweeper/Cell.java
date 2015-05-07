@@ -10,7 +10,7 @@ import java.util.List;
 public class Cell {
     private int mNum;
     private boolean mIsMine;
-    private boolean mIsClicked;
+    private boolean mIsAnimated;
     private boolean mIsRevealed;
     private boolean mMineRecovered;
     private HashSet<Integer> mNeighbours;
@@ -21,7 +21,7 @@ public class Cell {
     Cell(int num, boolean isMine) {
         mNum = num;
         mIsMine = isMine;
-        mIsClicked = false;
+        mIsAnimated = false;
         mNeighbours = new HashSet<>();
     }
 
@@ -70,12 +70,12 @@ public class Cell {
         return mNeighbours;
     }
 
-    public boolean isClicked() {
-        return mIsClicked;
+    public boolean isAnimated() {
+        return mIsAnimated;
     }
 
-    public void setIsClicked(boolean mIsClicked) {
-        this.mIsClicked = mIsClicked;
+    public void setIsAnimated(boolean mIsAnimated) {
+        this.mIsAnimated = mIsAnimated;
     }
 
     public boolean isMineRecovered() {

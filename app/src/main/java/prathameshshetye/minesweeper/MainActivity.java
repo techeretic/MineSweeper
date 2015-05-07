@@ -11,6 +11,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.GridView;
 import android.widget.TextView;
 
 import org.w3c.dom.Text;
@@ -25,12 +27,14 @@ public class MainActivity extends AppCompatActivity {
     private final String TAG = "Sweeper";
     public static final int N=8;
     public static final int M=10;
-    private RecyclerView mRecView;
+    //private RecyclerView mRecView;
+    private GridView mGridView;
     private TextView mScore;
-    private CellAdapter mAdapter;
+    private GridAdapter mAdapter;
     private Cell[] mCells = new Cell[N*N];
     private int mMineRecoveryCount;
     private int[][] mMatrix;
+    private int x,y;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,36 +42,41 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mMineRecoveryCount = 0;
 
-        mRecView = (RecyclerView) findViewById(R.id.RecyclerView);
+        //mRecView = (RecyclerView) findViewById(R.id.RecyclerView);
+        mGridView = (GridView) findViewById(R.id.gridview);
         mScore = (TextView) findViewById(R.id.score);
 
         setupMineField();
-        mRecView.addOnItemTouchListener(new RecyclerItemClickListener(this, mRecView, new RecyclerItemClickListener.OnItemClickListener() {
+        mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(View view, int position) {
-                if (CellAdapter.sState == CellAdapter.PlayState.gameOver) {
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                if (GridAdapter.sState == GridAdapter.PlayState.gameOver) {
                     return;
                 }
-                CellAdapter.sState = CellAdapter.PlayState.inPlay;
+                GridAdapter.sState = GridAdapter.PlayState.inPlay;
                 revealCells(position);
-                mAdapter.notifyDataSetChanged();
+                mAdapter = new GridAdapter(mCells);
+                mGridView.setAdapter(mAdapter);
             }
+        });
 
+        mGridView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
-            public void onItemLongClick(View view, int position) {
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 Log.d(TAG, "Position = " + position + " & is it a MINE? " + mCells[position].isMine());
                 if (mCells[position].isMineRecovered()) {
-                    return;
+                    return true;
                 }
                 if (mCells[position].isMine()) {
                     mMineRecoveryCount++;
-                    mCells[position].setIsClicked(true);
                     mCells[position].setMineRecovered(true);
-                    mAdapter.notifyDataSetChanged();
+                    mAdapter = new GridAdapter(mCells);
+                    mGridView.setAdapter(mAdapter);
                     updateScore();
                 }
+                return true;
             }
-        }));
+        });
     }
 
     @Override
@@ -101,10 +110,11 @@ public class MainActivity extends AppCompatActivity {
         }
         prepareNeighbours();
         prepareMineCount();
-        mAdapter = new CellAdapter(mCells);
-        mRecView.setAdapter(mAdapter);
-        mRecView.setLayoutManager(new GridLayoutManager(this, 8, GridLayoutManager.VERTICAL, false));
-        CellAdapter.sState = CellAdapter.PlayState.start;
+        mAdapter = new GridAdapter(mCells);
+        mGridView.setAdapter(mAdapter);
+        //mRecView.setAdapter(mAdapter);
+        //mRecView.setLayoutManager(new GridLayoutManager(this, 8, GridLayoutManager.VERTICAL, false));
+        GridAdapter.sState = GridAdapter.PlayState.start;
         mScore.setText("Mines Recovered : 0");
         mMineRecoveryCount=0;
     }
@@ -172,13 +182,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void revealCells(int position) {
         if (mCells[position].isMine()) {
-            CellAdapter.sState = CellAdapter.PlayState.gameOver;
+            GridAdapter.sState = GridAdapter.PlayState.gameOver;
             return;
         }
         mCells[position].setIsRevealed(true);
-        if (mCells[position].getMineCount() == 0) {
+        x = position/N;
+        y = position%N;
+        checkNReveal(position, mCells[position].getMineCount());
+        /*if (mCells[position].getMineCount() == 0) {
             checkNReveal(position, 0);
-        }
+        }*/
     }
 
     private void checkNReveal(int pos, int count) {
