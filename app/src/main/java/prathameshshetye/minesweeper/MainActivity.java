@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private CellAdapter mAdapter;
     private Cell[] mCells = new Cell[N*N];
     private int mMineRecoveryCount;
+    private int[][] mMatrix;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,11 +110,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void prepareNeighbours() {
-        int[][] arr = new int [N][N];
+        mMatrix = new int [N][N];
         int k=0;
         for(int i=0;i<N;i++) {
             for(int j=0;j<N;j++) {
-                arr[i][j]=mCells[k].getNum();
+                mMatrix[i][j]=mCells[k].getNum();
                 k++;
             }
         }
@@ -122,27 +123,27 @@ public class MainActivity extends AppCompatActivity {
             for(int j=0;j<N;j++) {
                 if ((i-1) >= 0) {
                     if ((j-1) >= 0) {
-                        mCells[arr[i][j]].addToNeighbours(arr[i-1][j-1]);
+                        mCells[mMatrix[i][j]].addToNeighbours(mMatrix[i-1][j-1]);
                     }
-                    mCells[arr[i][j]].addToNeighbours(arr[i-1][j]);
+                    mCells[mMatrix[i][j]].addToNeighbours(mMatrix[i-1][j]);
                     if ((j+1)<N) {
-                        mCells[arr[i][j]].addToNeighbours(arr[i-1][j+1]);
+                        mCells[mMatrix[i][j]].addToNeighbours(mMatrix[i-1][j+1]);
                     }
                 }
                 if ((j-1) >= 0) {
-                    mCells[arr[i][j]].addToNeighbours(arr[i][j-1]);
+                    mCells[mMatrix[i][j]].addToNeighbours(mMatrix[i][j-1]);
                     if ((i+1) < N) {
-                        mCells[arr[i][j]].addToNeighbours(arr[i+1][j-1]);
+                        mCells[mMatrix[i][j]].addToNeighbours(mMatrix[i+1][j-1]);
                     }
                 }
                 if ((i+1) < N) {
                     if ((j+1) < N) {
-                        mCells[arr[i][j]].addToNeighbours(arr[i+1][j+1]);
+                        mCells[mMatrix[i][j]].addToNeighbours(mMatrix[i+1][j+1]);
                     }
-                    mCells[arr[i][j]].addToNeighbours(arr[i+1][j]);
+                    mCells[mMatrix[i][j]].addToNeighbours(mMatrix[i+1][j]);
                 }
                 if ((j+1) < N) {
-                    mCells[arr[i][j]].addToNeighbours(arr[i][j+1]);
+                    mCells[mMatrix[i][j]].addToNeighbours(mMatrix[i][j+1]);
                 }
             }
         }
@@ -175,26 +176,53 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         mCells[position].setIsRevealed(true);
-        checkAndReveal(position-(N+1), -(N+1));
-        checkAndReveal(position-N, -N);
-        checkAndReveal(position-(N-1), -(N-1));
-        checkAndReveal(position-1, -1);
-        checkAndReveal(position+1, 1);
-        checkAndReveal(position+(N-1), (N-1));
-        checkAndReveal(position+N, N);
-        checkAndReveal(position+(N+1), N+1);
+        if (mCells[position].getMineCount() == 0) {
+            checkNReveal(position, 0);
+        }
     }
 
-    private void checkAndReveal(int pos, int from) {
-        if (pos < 0 || (pos-from)%2==0 || (pos-from)%2==(N-1) || pos >= N*N) {
-            Log.d(TAG, "Rejecting " + pos + " where from = " + from);
+    private void checkNReveal(int pos, int count) {
+        int i=pos/N;
+        int j=pos%N;
+
+        // TOP LEFT
+        revealCell(i-1,j-1,count);
+
+        //TOP
+        revealCell(i,j-1,count);
+
+        //TOP RIGHT
+        revealCell(i+1,j-1,count);
+
+        //LEFT
+        revealCell(i-1,j,count);
+
+        //RIGHT
+        revealCell(i+1,j,count);
+
+        //BOTTOM LEFT
+        revealCell(i-1,j+1,count);
+
+        //BOTTOM
+        revealCell(i,j+1,count);
+
+        //BOTTOM RIGHT
+        revealCell(i+1,j+1,count);
+    }
+
+    private void revealCell(int k, int l, int count) {
+        if (count < 0 || count > 0) {
             return;
         }
-        if (mCells[pos].isMine()) {
-            Log.d(TAG, "Rejecting " + pos + " where from = " + from);
-            return;
+        if (k >= 0 && k < N && l >= 0 && l < N) {
+            if (mCells[mMatrix[k][l]].isMine()) {
+                return;
+            }
+            if (!mCells[mMatrix[k][l]].isRevealed()) {
+                Log.d(TAG, "Revealing : " + k+ ","+l+" count = "+mCells[mMatrix[k][l]].getMineCount());
+                mCells[mMatrix[k][l]].setIsRevealed(true);
+                checkNReveal(mMatrix[k][l], mCells[mMatrix[k][l]].getMineCount());
+            }
         }
-        mCells[pos].setIsRevealed(true);
-        checkAndReveal(pos+from, from);
     }
 }

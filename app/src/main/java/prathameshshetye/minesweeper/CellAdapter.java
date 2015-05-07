@@ -40,7 +40,7 @@ public class CellAdapter extends RecyclerView.Adapter<CellAdapter.ViewHolder>{
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
+        //holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
         if (sState == PlayState.start) {
             //holder.mCell.setBackgroundColor(Color.BLACK);
             return;
@@ -52,7 +52,11 @@ public class CellAdapter extends RecyclerView.Adapter<CellAdapter.ViewHolder>{
                 holder.mCell.setBackgroundColor(Color.RED);
                 holder.mCellData.setText("M");
             } else {
-                holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
+                if (mCells[position].getMineCount() != 0) {
+                    holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
+                } else {
+                    holder.mCellData.setText("-");
+                }
             }
             return;
         }
@@ -63,50 +67,14 @@ public class CellAdapter extends RecyclerView.Adapter<CellAdapter.ViewHolder>{
         }
         if (mCells[position].isRevealed()) {
             if (!mCells[position].isMine()) {
-                holder.mCell.setBackgroundColor(Color.GRAY);
                 if (mCells[position].getMineCount() != 0) {
                     holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
-                }
-                return;
-            }
-        }
-        /*
-        if(mCells[position].isRevealed()) {
-            if (mCells[position].isMine()) {
-                revealMine(mCells[position], holder);
-                return;
-            }
-            holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
-            return;
-        }
-        switch (sState) {
-            case cheat:
-            case victory:
-            case gameOver:
-                if (mCells[position].isMine()) {
-                    holder.mCell.setBackgroundColor(Color.RED);
-                    holder.mCellData.setText("M");
                 } else {
-                    holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
+                    holder.mCellData.setText("-");
                 }
-                break;
-            case start:
-                holder.mCellData.setText("");
-                break;
-            case inPlay:
-                if (mCells[position].isClicked()) {
-                    if (mCells[position].isMine()) {
-                        revealMine(mCells[position], holder);
-                    } else {
-                        mCells[position].setIsRevealed(true);
-                        holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
-                    }
-                } else if (mCells[position].getMineCount()==0 && !mCells[position].isMine()) {
-                    mCells[position].setIsRevealed(true);
-                    holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
-                }
+                return;
+            }
         }
-        */
     }
 
     @Override
