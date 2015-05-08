@@ -13,6 +13,7 @@ public class Cell {
     private boolean mIsAnimated;
     private boolean mIsRevealed;
     private boolean mMineRecovered;
+    private boolean mIsMarkedAsMine;
     private HashSet<Integer> mNeighbours;
     private int mMineCount;
     private static final int N = MainActivity.N;
@@ -84,6 +85,14 @@ public class Cell {
 
     public void setMineRecovered(boolean mMineRecovered) {
         this.mMineRecovered = mMineRecovered;
+    }
+
+    public boolean isMarkedAsMine() {
+        return mIsMarkedAsMine;
+    }
+
+    public void setIsMarkedAsMine(boolean isMarkedAsMine) {
+        this.mIsMarkedAsMine = isMarkedAsMine;
     }
 
     public void addToNeighbours(int val) {

@@ -4,11 +4,19 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <android.support.v7.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/top_toolbar"
+        android:background="@color/primary_dark"
+        android:layout_alignParentTop="true"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark"
+        android:elevation="4dp"/>
     <LinearLayout
-        android:id="@+id/buttonsPanel"
+        android:id="@+id/mainPanel"
+        android:layout_below="@+id/top_toolbar"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentTop="true"
         android:orientation="vertical" >
         <LinearLayout
             android:layout_width="wrap_content"
@@ -20,31 +28,70 @@
                 android:layout_height="wrap_content"
                 android:padding="10dp"
                 android:textStyle="bold"/>
-            <Button
-                android:id="@+id/btn_reset"
+            <TextView
+                android:id="@+id/info"
+                android:gravity="end"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/reset"
-                android:gravity="center"
-                android:padding="10dp" />
+                android:padding="10dp"
+                android:textStyle="bold"/>
         </LinearLayout>
         <GridView xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/gridview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:columnWidth="50dp"
-            android:numColumns="8"
             android:verticalSpacing="5dp"
             android:horizontalSpacing="5dp"
             android:stretchMode="columnWidth"
             android:gravity="center" />
         <TextView
-            android:id="@+id/announcer"
+            android:id="@+id/announcement"
+            android:gravity="center_horizontal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="10dp"
-            android:text="@string/hello_world"
+            android:text="@string/app_name"
             android:textStyle="bold"/>
     </LinearLayout>
 
+    <android.support.v7.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/monitor_toolbar"
+        android:background="@color/primary_dark"
+        android:layout_alignParentBottom="true"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark"
+        android:elevation="4dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal|center_vertical"
+            android:orientation="horizontal">
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="10dp"
+                style="?android:attr/buttonBarButtonStyle"
+                android:text="@string/cheat"
+                android:textColor="@color/primary_light"
+                android:layout_marginEnd="25dp"/>
+            <ImageView
+                android:id="@+id/btn_validate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/ic_smile"
+                android:layout_marginEnd="25dp"/>
+            <Button
+                android:id="@+id/btn_reset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="10dp"
+                style="?android:attr/buttonBarButtonStyle"
+                android:text="@string/reset"
+                android:textColor="@color/primary_light"
+                android:layout_marginEnd="25dp"/>
+        </LinearLayout>
+    </android.support.v7.widget.Toolbar>
 </RelativeLayout>

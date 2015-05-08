@@ -1,62 +1,71 @@
 package prathameshshetye.minesweeper;
 
-import android.content.Context;
+import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
-
 
 public class MainActivity extends AppCompatActivity {
 
     private final String TAG = "Sweeper";
     public static final int N=8;
     public static final int M=10;
-    //private RecyclerView mRecView;
     private GridView mGridView;
+    private Toolbar mToolbar;
     private TextView mScore;
+    private TextView mInfo;
+    private TextView mAnnouncement;
+    private ImageView mValidate;
     private GridAdapter mAdapter;
+    private Button mReset;
     private Cell[] mCells = new Cell[N*N];
     private int mMineRecoveryCount;
+    private int mMineErrorCount;
     private int[][] mMatrix;
-    private int x,y;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mMineRecoveryCount = 0;
+        mMineErrorCount = 0;
 
-        //mRecView = (RecyclerView) findViewById(R.id.RecyclerView);
         mGridView = (GridView) findViewById(R.id.gridview);
         mScore = (TextView) findViewById(R.id.score);
+        mInfo = (TextView) findViewById(R.id.info);
+        mAnnouncement = (TextView) findViewById(R.id.announcement);
+        mToolbar = (Toolbar) findViewById(R.id.top_toolbar);
+        mToolbar.setTitle(R.string.app_name);
+        mReset = (Button) findViewById(R.id.btn_reset);
+        mValidate = (ImageView) findViewById(R.id.btn_validate);
 
+        mGridView.setNumColumns(N);
         setupMineField();
         mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (GridAdapter.sState == GridAdapter.PlayState.gameOver) {
+                    showToResetDialog();
+                    return;
+                }
+                if (GridAdapter.sState == GridAdapter.PlayState.validation_pending) {
+                    showToValidateDialog();
                     return;
                 }
                 GridAdapter.sState = GridAdapter.PlayState.inPlay;
                 revealCells(position);
-                mAdapter = new GridAdapter(mCells);
-                mGridView.setAdapter(mAdapter);
+                setAnnouncement();
+                refreshCells();
             }
         });
 
@@ -64,34 +73,80 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 Log.d(TAG, "Position = " + position + " & is it a MINE? " + mCells[position].isMine());
-                if (mCells[position].isMineRecovered()) {
-                    return true;
-                }
-                if (mCells[position].isMine()) {
+                if (mCells[position].isMineRecovered()
+                        || mCells[position].isMarkedAsMine()
+                        || mCells[position].isRevealed()) {
+                    if (GridAdapter.sState == GridAdapter.PlayState.gameOver) {
+                        showToResetDialog();
+                        return true;
+                    }
+                    if (mCells[position].isMineRecovered()) {
+                        mCells[position].setMineRecovered(false);
+                    }
+                    if (mCells[position].isMarkedAsMine()) {
+                        mCells[position].setIsMarkedAsMine(false);
+                        mMineErrorCount--;
+                    }
+                    if (mCells[position].isRevealed()) {
+                        return true;
+                    }
+                    mMineRecoveryCount--;
+                } else {
+                    if (GridAdapter.sState == GridAdapter.PlayState.validation_pending) {
+                        showToValidateDialog();
+                        return true;
+                    }
                     mMineRecoveryCount++;
-                    mCells[position].setMineRecovered(true);
-                    mAdapter = new GridAdapter(mCells);
-                    mGridView.setAdapter(mAdapter);
-                    updateScore();
+                    if (mCells[position].isMine()) {
+                        mCells[position].setMineRecovered(true);
+                    } else {
+                        mCells[position].setIsMarkedAsMine(true);
+                        mMineErrorCount++;
+                    }
                 }
+                updateScore();
+                if (M == mMineRecoveryCount) {
+                    GridAdapter.sState = GridAdapter.PlayState.validation_pending;
+                } else {
+                    GridAdapter.sState = GridAdapter.PlayState.inPlay;
+                }
+                setAnnouncement();
+                refreshCells();
                 return true;
             }
         });
-    }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
+        mReset.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (GridAdapter.sState == GridAdapter.PlayState.inPlay) {
+                    showResetDialog();
+                } else {
+                    setupMineField();
+                }
+            }
+        });
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_reset) {
-            setupMineField();
-        }
-
-        return super.onOptionsItemSelected(item);
+        mValidate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (GridAdapter.sState == GridAdapter.PlayState.gameOver) {
+                    showToResetDialog();
+                    return;
+                }
+                if (mMineRecoveryCount == M) {
+                    if (mMineErrorCount == 0) {
+                        GridAdapter.sState = GridAdapter.PlayState.victory;
+                    } else {
+                        GridAdapter.sState = GridAdapter.PlayState.gameOver;
+                    }
+                    refreshCells();
+                    setAnnouncement();
+                } else {
+                    showIncompleteDialog();
+                }
+            }
+        });
     }
 
     private void setupMineField() {
@@ -112,11 +167,12 @@ public class MainActivity extends AppCompatActivity {
         prepareMineCount();
         mAdapter = new GridAdapter(mCells);
         mGridView.setAdapter(mAdapter);
-        //mRecView.setAdapter(mAdapter);
-        //mRecView.setLayoutManager(new GridLayoutManager(this, 8, GridLayoutManager.VERTICAL, false));
         GridAdapter.sState = GridAdapter.PlayState.start;
-        mScore.setText("Mines Recovered : 0");
         mMineRecoveryCount=0;
+        mMineErrorCount=0;
+        mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount));
+        mInfo.setText(getString(R.string.info) + " : " + M);
+        setAnnouncement();
     }
 
     private void prepareNeighbours() {
@@ -177,21 +233,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateScore() {
-        mScore.setText("Mines Recovered : " + String.valueOf(mMineRecoveryCount));
+        mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount));
     }
 
     private void revealCells(int position) {
         if (mCells[position].isMine()) {
             GridAdapter.sState = GridAdapter.PlayState.gameOver;
+            mInfo.setText(getString(R.string.gameover) + " : " + String.valueOf(mMineErrorCount));
             return;
         }
         mCells[position].setIsRevealed(true);
-        x = position/N;
-        y = position%N;
         checkNReveal(position, mCells[position].getMineCount());
-        /*if (mCells[position].getMineCount() == 0) {
-            checkNReveal(position, 0);
-        }*/
     }
 
     private void checkNReveal(int pos, int count) {
@@ -232,10 +284,95 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             if (!mCells[mMatrix[k][l]].isRevealed()) {
-                Log.d(TAG, "Revealing : " + k+ ","+l+" count = "+mCells[mMatrix[k][l]].getMineCount());
                 mCells[mMatrix[k][l]].setIsRevealed(true);
                 checkNReveal(mMatrix[k][l], mCells[mMatrix[k][l]].getMineCount());
             }
         }
+    }
+
+    private void setAnnouncement() {
+        switch(GridAdapter.sState) {
+            case victory:
+                mAnnouncement.setText(getString(R.string.result_victory));
+                mAnnouncement.setTextColor(getResources().getColor(R.color.caught_mine));
+                break;
+            case gameOver:
+                mAnnouncement.setText(getString(R.string.result_gameover));
+                mAnnouncement.setTextColor(getResources().getColor(R.color.banish_this_mine));
+                break;
+            case validation_pending:
+                mAnnouncement.setText(getString(R.string.need_validation));
+                mAnnouncement.setTextColor(getResources().getColor(R.color.secondary_text));
+                break;
+            default:
+                mAnnouncement.setText("");
+                mAnnouncement.setTextColor(getResources().getColor(R.color.primary_text));
+        }
+    }
+
+    private void showIncompleteDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.wait))
+                .setMessage(getString(R.string.cant_validate_1) + " "
+                        + String.valueOf(M-mMineRecoveryCount) + " "
+                        + getString(R.string.cant_validate_2))
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+    private void showToValidateDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.wait))
+                .setMessage(getString(R.string.need_validation))
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+    private void showToResetDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.done_here))
+                .setMessage(getString(R.string.resetting))
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        setupMineField();
+                        dialog.dismiss();
+                    }
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+    private void showResetDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.giving_up))
+                .setMessage(getString(R.string.all_lost))
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        setupMineField();
+                        dialog.dismiss();
+                    }
+                })
+                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+    private void refreshCells() {
+        mAdapter = new GridAdapter(mCells);
+        mGridView.setAdapter(mAdapter);
     }
 }

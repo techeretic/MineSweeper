@@ -7,9 +7,4 @@
         android:icon="@drawable/ic_reset"
         android:orderInCategory="100"
         app:showAsAction="always" />
-    <item android:id="@+id/action_reveal"
-        android:title="@string/reveal"
-        android:icon="@drawable/ic_show"
-        android:orderInCategory="100"
-        app:showAsAction="always" />
 </menu>

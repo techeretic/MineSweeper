@@ -5,5 +5,19 @@
     <string name="action_settings">Settings</string>
     <string name="ok">OK</string>
     <string name="reset">RESET</string>
-    <string name="reveal">REVEAL</string>
+    <string name="cheat">CHEAT</string>
+    <string name="validate">VALIDATE</string>
+    <string name="info">Total Mines present</string>
+    <string name="score">Mines Recovered</string>
+    <string name="gameover">Incorrect Marked Mines</string>
+    <string name="result_victory">VICTORY!!!</string>
+    <string name="result_gameover">GAME-OVER</string>
+    <string name="cant_validate_1">You still need to find </string>
+    <string name="cant_validate_2">Mines</string>
+    <string name="wait">Hold On</string>
+    <string name="need_validation">You need to run validation. Click the Smiley! ;-)</string>
+    <string name="done_here">You\'re done here</string>
+    <string name="resetting">Lets reset the game</string>
+    <string name="giving_up">Giving up?</string>
+    <string name="all_lost">All progress will be lost, you\'re sure you want to reset?</string>
 </resources>

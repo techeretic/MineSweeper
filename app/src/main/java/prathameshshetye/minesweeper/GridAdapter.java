@@ -24,6 +24,7 @@ public class GridAdapter extends BaseAdapter {
         inPlay,
         gameOver,
         victory,
+        validation_pending,
         cheat;
     }
 
@@ -68,23 +69,12 @@ public class GridAdapter extends BaseAdapter {
         if (sState == PlayState.start) {
             return v;
         }
-        if (sState == PlayState.gameOver ||
-                sState == PlayState.victory ||
-                sState == PlayState.cheat) {
-            if (mCells[position].isMine()) {
-                cell.setBackgroundColor(Color.RED);
-                cellData.setText("M");
+        if (mCells[position].isMineRecovered() || mCells[position].isMarkedAsMine()) {
+            if (mCells[position].isMarkedAsMine() && sState == PlayState.gameOver) {
+                cell.setBackgroundColor(parent.getContext().getResources().getColor(R.color.wrongly_accused_mine));
             } else {
-                if (mCells[position].getMineCount() != 0) {
-                    cellData.setText(String.valueOf(mCells[position].getMineCount()));
-                } else {
-                    cellData.setText("-");
-                }
+                cell.setBackgroundColor(parent.getContext().getResources().getColor(R.color.caught_mine));
             }
-            return v;
-        }
-        if (mCells[position].isMineRecovered()) {
-            cell.setBackgroundColor(Color.BLUE);
             cellData.setText("M");
             return v;
         }
@@ -92,9 +82,9 @@ public class GridAdapter extends BaseAdapter {
             if (!mCells[position].isMine()) {
                 if (mCells[position].getMineCount() != 0) {
                     cellData.setText(String.valueOf(mCells[position].getMineCount()));
-                } else {
-                    cellData.setText("-");
+                    cellData.setTextColor(parent.getContext().getResources().getColor(R.color.secondary_text));
                 }
+                cell.setBackgroundColor(parent.getContext().getResources().getColor(R.color.primary_light));
                 if (!mCells[position].isAnimated()) {
                     mCells[position].setIsAnimated(true);
                     Animation slideInTop = AnimationUtils.loadAnimation(parent.getContext(),
@@ -105,6 +95,21 @@ public class GridAdapter extends BaseAdapter {
                 }
                 return v;
             }
+        }
+        if (sState == PlayState.gameOver ||
+                sState == PlayState.victory ||
+                sState == PlayState.cheat) {
+            if (mCells[position].isMine()) {
+                cell.setBackgroundColor(parent.getContext().getResources().getColor(R.color.banish_this_mine));
+                cellData.setText("M");
+            } else {
+                if (mCells[position].getMineCount() != 0) {
+                    cellData.setText(String.valueOf(mCells[position].getMineCount()));
+                }
+                cellData.setTextColor(parent.getContext().getResources().getColor(R.color.secondary_text));
+                cell.setBackgroundColor(parent.getContext().getResources().getColor(R.color.primary_light));
+            }
+            return v;
         }
         return v;
     }
