@@ -1,8 +1,6 @@
 package prathameshshetye.minesweeper;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 
 /**
  * Created by p.shetye on 5/5/15.
@@ -16,8 +14,8 @@ public class Cell {
     private boolean mIsMarkedAsMine;
     private HashSet<Integer> mNeighbours;
     private int mMineCount;
-    private static final int N = MainActivity.N;
-    private static final int M = MainActivity.M;
+    private static final int N = GameActivity.N;
+    private static final int M = GameActivity.M;
 
     Cell(int num, boolean isMine) {
         mNum = num;

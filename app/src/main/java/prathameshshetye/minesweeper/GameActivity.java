@@ -1,13 +1,18 @@
 package prathameshshetye.minesweeper;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.internal.view.menu.MenuBuilder;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.GridView;
@@ -16,11 +21,12 @@ import android.widget.TextView;
 
 import java.util.Random;
 
-public class MainActivity extends AppCompatActivity {
+public class GameActivity extends AppCompatActivity {
 
     private final String TAG = "Sweeper";
     public static final int N=8;
     public static final int M=10;
+    public static final int C=5;
     private GridView mGridView;
     private Toolbar mToolbar;
     private TextView mScore;
@@ -30,14 +36,39 @@ public class MainActivity extends AppCompatActivity {
     private GridAdapter mAdapter;
     private Button mReset;
     private Button mCheat;
+    private CheaterTask mCheater;
     private Cell[] mCells = new Cell[N*N];
     private int mMineRecoveryCount;
     private int mMineErrorCount;
     private int[][] mMatrix;
+    private boolean mIsDialogShowing;
+    private enum ForDialog {
+        doCheat,
+        doReset,
+        doNothing;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_info:
+                showLegendDialog();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "START TIME IS " + System.currentTimeMillis());
+        showWelcomeDialog();
         setContentView(R.layout.activity_main);
         mMineRecoveryCount = 0;
         mMineErrorCount = 0;
@@ -52,20 +83,19 @@ public class MainActivity extends AppCompatActivity {
         mCheat = (Button) findViewById(R.id.btn_cheat);
         mValidate = (ImageView) findViewById(R.id.btn_validate);
 
+        GridAdapter.sState = GridAdapter.PlayState.start;
+        setSupportActionBar(mToolbar);
         mGridView.setNumColumns(N);
         setupMineField();
         mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if (GridAdapter.sState == GridAdapter.PlayState.gameOver) {
-                    showToResetDialog();
-                    return;
-                }
-                if (GridAdapter.sState == GridAdapter.PlayState.validation_pending) {
-                    showToValidateDialog();
-                    return;
-                }
-                if (mCells[position].isMarkedAsMine() || mCells[position].isMineRecovered()) {
+                Log.d(TAG, "In GRID OnItemClickListener");
+                if (GridAdapter.sState == GridAdapter.PlayState.cheat
+                        || checkIfGameOver()
+                        || checkIfValidationPending()
+                        || mCells[position].isMarkedAsMine()
+                        || mCells[position].isMineRecovered()) {
                     return;
                 }
                 GridAdapter.sState = GridAdapter.PlayState.inPlay;
@@ -79,13 +109,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 Log.d(TAG, "Position = " + position + " & is it a MINE? " + mCells[position].isMine());
+                if (checkIfGameOver() || GridAdapter.sState == GridAdapter.PlayState.cheat) {
+                    return true;
+                }
                 if (mCells[position].isMineRecovered()
                         || mCells[position].isMarkedAsMine()
                         || mCells[position].isRevealed()) {
-                    if (GridAdapter.sState == GridAdapter.PlayState.gameOver) {
-                        showToResetDialog();
-                        return true;
-                    }
                     if (mCells[position].isMineRecovered()) {
                         mCells[position].setMineRecovered(false);
                     }
@@ -98,8 +127,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     mMineRecoveryCount--;
                 } else {
-                    if (GridAdapter.sState == GridAdapter.PlayState.validation_pending) {
-                        showToValidateDialog();
+                    if (checkIfValidationPending()) {
                         return true;
                     }
                     mMineRecoveryCount++;
@@ -126,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (GridAdapter.sState == GridAdapter.PlayState.inPlay) {
-                    showResetDialog();
+                    showAlertDialog(getString(R.string.giving_up), getString(R.string.all_lost), true, ForDialog.doReset);
                 } else {
                     setupMineField();
                 }
@@ -136,8 +164,7 @@ public class MainActivity extends AppCompatActivity {
         mValidate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (GridAdapter.sState == GridAdapter.PlayState.gameOver) {
-                    showToResetDialog();
+                if (checkIfGameOver()) {
                     return;
                 }
                 if (mMineRecoveryCount == M) {
@@ -145,11 +172,16 @@ public class MainActivity extends AppCompatActivity {
                         GridAdapter.sState = GridAdapter.PlayState.victory;
                     } else {
                         GridAdapter.sState = GridAdapter.PlayState.gameOver;
+                        mInfo.setText(getString(R.string.gameover) + " : " + String.valueOf(mMineErrorCount));
+                        mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount-mMineErrorCount));
                     }
                     refreshCells();
                     setAnnouncement();
                 } else {
-                    showIncompleteDialog();
+                    showAlertDialog(getString(R.string.wait),
+                            getString(R.string.cant_validate_1)
+                                    + " " + String.valueOf(M - mMineRecoveryCount)
+                                    + " " + getString(R.string.cant_validate_2), false, ForDialog.doNothing);
                 }
             }
         });
@@ -157,9 +189,19 @@ public class MainActivity extends AppCompatActivity {
         mCheat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new CheaterTask(5).execute();
+                if (checkIfGameOver()) {
+                    return;
+                }
+                showAlertDialog(getString(R.string.cheater_head), getString(R.string.cheater_body), true, ForDialog.doCheat);
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        Log.d(TAG, "END TIME IS " + System.currentTimeMillis());
     }
 
     private void setupMineField() {
@@ -323,67 +365,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void showIncompleteDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.wait))
-                .setMessage(getString(R.string.cant_validate_1) + " "
-                        + String.valueOf(M-mMineRecoveryCount) + " "
-                        + getString(R.string.cant_validate_2))
-                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
-                .setCancelable(false)
-                .show();
-    }
-
-    private void showToValidateDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.wait))
-                .setMessage(getString(R.string.need_validation))
-                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
-                .setCancelable(false)
-                .show();
-    }
-
-    private void showToResetDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.done_here))
-                .setMessage(getString(R.string.resetting))
-                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        setupMineField();
-                        dialog.dismiss();
-                    }
-                })
-                .setCancelable(false)
-                .show();
-    }
-
-    private void showResetDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle(getString(R.string.giving_up))
-                .setMessage(getString(R.string.all_lost))
-                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        setupMineField();
-                        dialog.dismiss();
-                    }
-                })
-                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
-                .setCancelable(false)
-                .show();
-    }
-
     private void refreshCells() {
         mAdapter = new GridAdapter(mCells);
         mGridView.setAdapter(mAdapter);
@@ -402,6 +383,10 @@ public class MainActivity extends AppCompatActivity {
             super.onPreExecute();
             mOldState = GridAdapter.sState;
             GridAdapter.sState = GridAdapter.PlayState.cheat;
+            mAnnouncement.setText(getString(R.string.cheater_announce)
+                    + String.valueOf(mTimer)
+                    + getString(R.string.cheater_announce_2));
+            mAnnouncement.setTextColor(getResources().getColor(R.color.accent));
             Log.d(TAG, "About to start cheating");
         }
 
@@ -411,7 +396,7 @@ public class MainActivity extends AppCompatActivity {
             while(mTimer > 0) {
                 try {
                     publishProgress();
-                    Thread.sleep(750);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     Log.d(TAG, "Cant cheat anymore");
                 }
@@ -424,6 +409,9 @@ public class MainActivity extends AppCompatActivity {
         protected void onProgressUpdate(Void... values) {
             super.onProgressUpdate(values);
             refreshCells();
+            mAnnouncement.setText(getString(R.string.cheater_announce)
+                    + String.valueOf(mTimer)
+                    + getString(R.string.cheater_announce_2));
         }
 
         @Override
@@ -431,6 +419,118 @@ public class MainActivity extends AppCompatActivity {
             super.onPostExecute(aVoid);
             GridAdapter.sState = mOldState;
             refreshCells();
+            mAnnouncement.setText("");
+            mAnnouncement.setTextColor(getResources().getColor(R.color.primary_text));
+        }
+    }
+
+    private void showAlertDialog(String title, String message, boolean negativeButton, final ForDialog diagBehavior) {
+        AlertDialog.Builder ad = new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(message)
+                .setCancelable(false)
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (diagBehavior) {
+                            case doReset:
+                                setupMineField();
+                                break;
+                            case doCheat:
+                                new CheaterTask(C).execute();
+                                break;
+                        }
+                        dialog.dismiss();
+                    }
+                });
+        if (negativeButton) {
+            ad.setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+        }
+        ad.show();
+    }
+
+    private boolean checkIfGameOver() {
+        if (GridAdapter.sState == GridAdapter.PlayState.gameOver
+                || GridAdapter.sState == GridAdapter.PlayState.victory) {
+            showAlertDialog(getString(R.string.done_here), getString(R.string.resetting), false, ForDialog.doReset);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean checkIfValidationPending() {
+        if (GridAdapter.sState == GridAdapter.PlayState.validation_pending) {
+            showAlertDialog(getString(R.string.wait), getString(R.string.need_validation), false, ForDialog.doNothing);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        GridAdapter.sState = GridAdapter.PlayState.start;
+        finish();
+    }
+
+    private void showLegendDialog() {
+        Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.legend);
+        dialog.setCancelable(true);
+        dialog.show();
+    }
+
+    private void showWelcomeDialog() {
+        mIsDialogShowing = true;
+        Button newGame;
+        Button exit;
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.activity_welcome);
+        newGame = (Button) dialog.findViewById(R.id.btn_new_game);
+        newGame.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mIsDialogShowing = false;
+                dialog.dismiss();
+            }
+        });
+        exit = (Button) dialog.findViewById(R.id.btn_exit);
+        exit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+                finish();
+            }
+        });
+        dialog.setCancelable(false);
+        dialog.show();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!mIsDialogShowing) {
+            new AlertDialog.Builder(this)
+                    .setCancelable(false)
+                    .setTitle(getString(R.string.confirm_exit))
+                    .setMessage(getString(R.string.confirm_exit_message))
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            showWelcomeDialog();
+                            setupMineField();
+                            dialog.dismiss();
+                        }
+                    })
+                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    })
+                    .show();
         }
     }
 }

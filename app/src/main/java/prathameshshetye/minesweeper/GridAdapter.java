@@ -1,7 +1,5 @@
 package prathameshshetye.minesweeper;
 
-import android.graphics.Color;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,8 +14,8 @@ import android.widget.TextView;
  */
 public class GridAdapter extends BaseAdapter {
 
-    public static final int N=MainActivity.N;
-    public static final int M=MainActivity.M;
+    public static final int N= GameActivity.N;
+    public static final int M= GameActivity.M;
     private final String TAG = "Sweeper";
     public enum PlayState {
         start,
@@ -51,7 +49,7 @@ public class GridAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
-        return position/MainActivity.N;
+        return position/ GameActivity.N;
     }
 
     @Override
@@ -71,7 +69,7 @@ public class GridAdapter extends BaseAdapter {
         }
         if (sState == PlayState.cheat) {
             if (mCells[position].isMine()) {
-                cell.setBackgroundColor(parent.getContext().getResources().getColor(R.color.caught_mine));
+                cell.setBackgroundColor(parent.getContext().getResources().getColor(R.color.banish_this_mine));
                 cellData.setText("M");
                 Animation slideInTop = AnimationUtils.loadAnimation(parent.getContext(),
                         R.anim.abc_fade_in);
@@ -109,8 +107,7 @@ public class GridAdapter extends BaseAdapter {
             }
         }
         if (sState == PlayState.gameOver ||
-                sState == PlayState.victory ||
-                sState == PlayState.cheat) {
+                sState == PlayState.victory) {
             if (mCells[position].isMine()) {
                 cell.setBackgroundColor(parent.getContext().getResources().getColor(R.color.banish_this_mine));
                 cellData.setText("M");

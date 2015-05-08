@@ -20,4 +20,18 @@
     <string name="resetting">Lets reset the game</string>
     <string name="giving_up">Giving up?</string>
     <string name="all_lost">All progress will be lost, you\'re sure you want to reset?</string>
+    <string name="cheater_head">Cheater</string>
+    <string name="cheater_body">You really wanna cheat??</string>
+    <string name="cheater_announce">Cheat available for&#160;</string>
+    <string name="cheater_announce_2">&#160;seconds</string>
+    <string name="title_activity_welcome">WelcomeActivity</string>
+    <string name="new_game">New Game</string>
+    <string name="legend">LEGEND</string>
+    <string name="orig_mine">Original Mines</string>
+    <string name="fake_mine">Erroneously Marked Mines</string>
+    <string name="caught_mine">Cleared/Caught Mine</string>
+    <string name="mine_indicator">M</string>
+    <string name="confirm_exit">You\'re sure?</string>
+    <string name="confirm_exit_message">All progress will be lost.\nContinue?</string>
+    <string name="exit">EXIT</string>
 </resources>
