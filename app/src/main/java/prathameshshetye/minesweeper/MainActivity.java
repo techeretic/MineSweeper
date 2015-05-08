@@ -62,6 +62,9 @@ public class MainActivity extends AppCompatActivity {
                     showToValidateDialog();
                     return;
                 }
+                if (mCells[position].isMarkedAsMine() || mCells[position].isMineRecovered()) {
+                    return;
+                }
                 GridAdapter.sState = GridAdapter.PlayState.inPlay;
                 revealCells(position);
                 setAnnouncement();
