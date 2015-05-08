@@ -69,6 +69,18 @@ public class GridAdapter extends BaseAdapter {
         if (sState == PlayState.start) {
             return v;
         }
+        if (sState == PlayState.cheat) {
+            if (mCells[position].isMine()) {
+                cell.setBackgroundColor(parent.getContext().getResources().getColor(R.color.caught_mine));
+                cellData.setText("M");
+                Animation slideInTop = AnimationUtils.loadAnimation(parent.getContext(),
+                        R.anim.abc_fade_in);
+                slideInTop.setDuration(750);
+                v.setAnimation(slideInTop);
+                v.animate();
+            }
+            return v;
+        }
         if (mCells[position].isMineRecovered() || mCells[position].isMarkedAsMine()) {
             if (mCells[position].isMarkedAsMine() && sState == PlayState.gameOver) {
                 cell.setBackgroundColor(parent.getContext().getResources().getColor(R.color.wrongly_accused_mine));

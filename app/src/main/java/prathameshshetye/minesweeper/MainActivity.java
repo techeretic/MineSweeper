@@ -2,6 +2,7 @@ package prathameshshetye.minesweeper;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -28,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView mValidate;
     private GridAdapter mAdapter;
     private Button mReset;
+    private Button mCheat;
     private Cell[] mCells = new Cell[N*N];
     private int mMineRecoveryCount;
     private int mMineErrorCount;
@@ -47,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
         mToolbar = (Toolbar) findViewById(R.id.top_toolbar);
         mToolbar.setTitle(R.string.app_name);
         mReset = (Button) findViewById(R.id.btn_reset);
+        mCheat = (Button) findViewById(R.id.btn_cheat);
         mValidate = (ImageView) findViewById(R.id.btn_validate);
 
         mGridView.setNumColumns(N);
@@ -148,6 +151,13 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     showIncompleteDialog();
                 }
+            }
+        });
+
+        mCheat.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new CheaterTask(5).execute();
             }
         });
     }
@@ -377,5 +387,50 @@ public class MainActivity extends AppCompatActivity {
     private void refreshCells() {
         mAdapter = new GridAdapter(mCells);
         mGridView.setAdapter(mAdapter);
+    }
+
+    private class CheaterTask extends AsyncTask<Void, Void, Void> {
+        int mTimer;
+        GridAdapter.PlayState mOldState;
+
+        CheaterTask(int timer) {
+            mTimer = timer;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mOldState = GridAdapter.sState;
+            GridAdapter.sState = GridAdapter.PlayState.cheat;
+            Log.d(TAG, "About to start cheating");
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Log.d(TAG, "Cheating in progress");
+            while(mTimer > 0) {
+                try {
+                    publishProgress();
+                    Thread.sleep(750);
+                } catch (InterruptedException e) {
+                    Log.d(TAG, "Cant cheat anymore");
+                }
+                mTimer--;
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+            refreshCells();
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            GridAdapter.sState = mOldState;
+            refreshCells();
+        }
     }
 }
