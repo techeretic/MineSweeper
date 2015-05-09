@@ -14,8 +14,6 @@ public class Cell {
     private boolean mIsMarkedAsMine;
     private HashSet<Integer> mNeighbours;
     private int mMineCount;
-    private static final int N = GameActivity.N;
-    private static final int M = GameActivity.M;
 
     Cell(int num, boolean isMine) {
         mNum = num;
@@ -50,19 +48,6 @@ public class Cell {
 
     public void setIsRevealed(boolean mIsRevealed) {
         this.mIsRevealed = mIsRevealed;
-    }
-
-    public String getSurroundings() {
-        StringBuffer buff = new StringBuffer();
-        if (isMine()) {
-            buff.append("Mine\n");
-        }
-        if (mNeighbours != null) {
-            for(Integer i : mNeighbours) {
-                buff.append(i + ",");
-            }
-        }
-        return buff.toString();
     }
 
     public HashSet<Integer> getNeighbours() {

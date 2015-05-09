@@ -2,12 +2,12 @@ package prathameshshetye.minesweeper;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.internal.view.menu.MenuBuilder;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -16,11 +16,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
-import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.GridView;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,9 +26,9 @@ import java.util.Random;
 public class GameActivity extends AppCompatActivity {
 
     private final String TAG = "Sweeper";
-    public static final int N=8;
-    public static final int M=10;
-    public static final int C=3;
+    private int N=10;
+    private int M=20;
+    private int C=3;
     private RecyclerView mRecView;
     private RecycledCellsAdapter mAdapter;
     private Toolbar mToolbar;
@@ -42,14 +39,14 @@ public class GameActivity extends AppCompatActivity {
     private Button mCheat;
     private Toast mToast;
     private CheaterTask mCheater;
-    private Cell[] mCells = new Cell[N*N];
+    private Cell[] mCells;
     private int mMineRecoveryCount;
     private int mMineErrorCount;
     private int[][] mMatrix;
     private enum ForDialog {
         doCheat,
         doReset,
-        doNothing;
+        doNothing
     }
     public enum PlayState {
         start,
@@ -57,7 +54,7 @@ public class GameActivity extends AppCompatActivity {
         gameOver,
         victory,
         validation_pending,
-        cheat;
+        cheat
     }
     public static PlayState sState;
     @Override
@@ -80,7 +77,11 @@ public class GameActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        postponeEnterTransition();
+        int [] val = Utilities.getInstance().getSavedValues(this);
+        N = val[0];
+        M = val[1];
+        mCells = new Cell[N*N];
+        Log.d(TAG, "N = " + N + ", M = " + M);
         mMineRecoveryCount = 0;
         mMineErrorCount = 0;
 
@@ -164,85 +165,10 @@ public class GameActivity extends AppCompatActivity {
                         refreshCells();
                     }
                 }));
-/*
-        mReset.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (sState == PlayState.cheat) {
-                    return;
-                }
-                if (sState == PlayState.inPlay) {
-                    showAlertDialog(getString(R.string.giving_up), getString(R.string.all_lost), true, ForDialog.doReset);
-                } else {
-                    setupMineField();
-                }
-            }
-        });
-
-        mValidate.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (sState == PlayState.cheat) {
-                    return;
-                }
-                if (checkIfGameOver()) {
-                    return;
-                }
-                if (mMineRecoveryCount == M) {
-                    if (mMineErrorCount == 0) {
-                        sState = PlayState.victory;
-                    } else {
-                        sState = PlayState.gameOver;
-                        mInfo.setText(getString(R.string.gameover) + " : " + String.valueOf(mMineErrorCount));
-                        mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount-mMineErrorCount));
-                    }
-                    refreshCells();
-                    setAnnouncement();
-                } else {
-                    showAlertDialog(getString(R.string.wait),
-                            getString(R.string.cant_validate_1)
-                                    + " " + String.valueOf(M - mMineRecoveryCount)
-                                    + " " + getString(R.string.cant_validate_2), false, ForDialog.doNothing);
-                }
-            }
-        });
-
-        mCheat.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (checkIfGameOver()) {
-                    return;
-                }
-                showAlertDialog(getString(R.string.cheater_head), getString(R.string.cheater_body), true, ForDialog.doCheat);
-            }
-        });
-*/
-        startPostponedEnterTransition();
     }
 
     private void setupMineField() {
-        Random rand = new Random();
-        for(int i=0; i<(N*N); i++) {
-            mCells[i] = new Cell(i, false);
-        }
-
-        for(int i=0; i<M; i++) {
-            int r = rand.nextInt(N*N);
-            if (mCells[r].isMine()) {
-                i--;
-            } else {
-                mCells[r].setIsMine(true);
-            }
-        }
-        prepareNeighbours();
-        prepareMineCount();
-        refreshCells();
-        sState = PlayState.start;
-        mMineRecoveryCount=0;
-        mMineErrorCount=0;
-        mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount));
-        mInfo.setText(getString(R.string.info) + " : " + M);
-        setAnnouncement();
+        new LoadMineFieldTask(this).execute();
     }
 
     private void prepareNeighbours() {
@@ -375,6 +301,7 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void refreshCells() {
+        Log.d(TAG, "in refreshCells size = " + mCells.length);
         mAdapter = new RecycledCellsAdapter(mCells, this);
         mRecView.setAdapter(mAdapter);
         mRecView.setLayoutManager(new GridLayoutManager(this, N, GridLayoutManager.VERTICAL, false));
@@ -570,6 +497,60 @@ public class GameActivity extends AppCompatActivity {
             } else {
                 setupMineField();
             }
+        }
+    }
+
+    private class LoadMineFieldTask extends AsyncTask<Void, Void, Void> {
+        ProgressDialog mPDiag;
+        Context mContext;
+
+        LoadMineFieldTask(Context context) {
+            mContext = context;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mPDiag = new ProgressDialog(mContext);
+            mPDiag.setCancelable(false);
+            mPDiag.setMessage(getString(R.string.loading));
+            mPDiag.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Random rand = new Random();
+            for(int i=0; i<(N*N); i++) {
+                mCells[i] = new Cell(i, false);
+            }
+
+            for(int i=0; i<M; i++) {
+                int r = rand.nextInt(N*N);
+                if (mCells[r].isMine()) {
+                    i--;
+                } else {
+                    mCells[r].setIsMine(true);
+                }
+            }
+            prepareNeighbours();
+            prepareMineCount();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            if (mPDiag != null) {
+                mPDiag.dismiss();
+                mPDiag = null;
+            }
+            refreshCells();
+            sState = PlayState.start;
+            mMineRecoveryCount=0;
+            mMineErrorCount=0;
+            mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount));
+            mInfo.setText(getString(R.string.info) + " : " + M);
+            setAnnouncement();
         }
     }
 }

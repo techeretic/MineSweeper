@@ -11,11 +11,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 
 
 public class WelcomeActivity extends AppCompatActivity {
 
     private Button mNewGame;
+    private ImageView mSettings;
     private Button mExit;
 
     @Override
@@ -38,6 +41,17 @@ public class WelcomeActivity extends AppCompatActivity {
                 finishAfterTransition();
             }
         });
+        mSettings = (ImageView) findViewById(R.id.settingsButton);
+        mSettings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startSettingsDialog();
+            }
+        });
+    }
+
+    private void startSettingsDialog() {
+        Utilities.getInstance().showSettingsDialog(this);
     }
 
     private void startNewGame() {

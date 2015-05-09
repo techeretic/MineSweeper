@@ -4,6 +4,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="ok">OK</string>
+    <string name="cancel">CANCEL</string>
     <string name="reset">RESET</string>
     <string name="cheat">CHEAT</string>
     <string name="validate">VALIDATE</string>
@@ -36,4 +37,8 @@
     <string name="exit">EXIT</string>
     <string name="generic_cnt">2</string>
     <string name="mine_ind">No. of mines in any of the adjacent cells</string>
+    <string name="updateGridSize">Size of the Mine Field?</string>
+    <string name="updateMines">How many mines should be buried?</string>
+    <string name="loading">Loading up MineField</string>
+    <string name="settings">Settings</string>
 </resources>
