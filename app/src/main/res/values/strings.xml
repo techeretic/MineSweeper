@@ -34,4 +34,6 @@
     <string name="confirm_exit">You\'re sure?</string>
     <string name="confirm_exit_message">All progress will be lost.\nContinue?</string>
     <string name="exit">EXIT</string>
+    <string name="generic_cnt">2</string>
+    <string name="mine_ind">No. of mines in any of the adjacent cells</string>
 </resources>

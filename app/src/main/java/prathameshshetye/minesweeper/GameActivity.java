@@ -3,10 +3,13 @@ package prathameshshetye.minesweeper;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.internal.view.menu.MenuBuilder;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -16,8 +19,10 @@ import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.GridView;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Random;
 
@@ -26,28 +31,35 @@ public class GameActivity extends AppCompatActivity {
     private final String TAG = "Sweeper";
     public static final int N=8;
     public static final int M=10;
-    public static final int C=5;
-    private GridView mGridView;
+    public static final int C=3;
+    private RecyclerView mRecView;
+    private RecycledCellsAdapter mAdapter;
     private Toolbar mToolbar;
     private TextView mScore;
     private TextView mInfo;
-    private TextView mAnnouncement;
-    private ImageView mValidate;
-    private GridAdapter mAdapter;
+    private ImageButton mValidate;
     private Button mReset;
     private Button mCheat;
+    private Toast mToast;
     private CheaterTask mCheater;
     private Cell[] mCells = new Cell[N*N];
     private int mMineRecoveryCount;
     private int mMineErrorCount;
     private int[][] mMatrix;
-    private boolean mIsDialogShowing;
     private enum ForDialog {
         doCheat,
         doReset,
         doNothing;
     }
-
+    public enum PlayState {
+        start,
+        inPlay,
+        gameOver,
+        victory,
+        validation_pending,
+        cheat;
+    }
+    public static PlayState sState;
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -67,93 +79,99 @@ public class GameActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "START TIME IS " + System.currentTimeMillis());
-        showWelcomeDialog();
         setContentView(R.layout.activity_main);
+        postponeEnterTransition();
         mMineRecoveryCount = 0;
         mMineErrorCount = 0;
 
-        mGridView = (GridView) findViewById(R.id.gridview);
+        mRecView = (RecyclerView) findViewById(R.id.recycleCells);
         mScore = (TextView) findViewById(R.id.score);
         mInfo = (TextView) findViewById(R.id.info);
-        mAnnouncement = (TextView) findViewById(R.id.announcement);
         mToolbar = (Toolbar) findViewById(R.id.top_toolbar);
         mToolbar.setTitle(R.string.app_name);
         mReset = (Button) findViewById(R.id.btn_reset);
         mCheat = (Button) findViewById(R.id.btn_cheat);
-        mValidate = (ImageView) findViewById(R.id.btn_validate);
+        mValidate = (ImageButton) findViewById(R.id.btn_validate);
 
-        GridAdapter.sState = GridAdapter.PlayState.start;
+        mRecView.setHasFixedSize(true);
+        sState = PlayState.start;
         setSupportActionBar(mToolbar);
-        mGridView.setNumColumns(N);
         setupMineField();
-        mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.d(TAG, "In GRID OnItemClickListener");
-                if (GridAdapter.sState == GridAdapter.PlayState.cheat
-                        || checkIfGameOver()
-                        || checkIfValidationPending()
-                        || mCells[position].isMarkedAsMine()
-                        || mCells[position].isMineRecovered()) {
-                    return;
-                }
-                GridAdapter.sState = GridAdapter.PlayState.inPlay;
-                revealCells(position);
-                setAnnouncement();
-                refreshCells();
-            }
-        });
 
-        mGridView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.d(TAG, "Position = " + position + " & is it a MINE? " + mCells[position].isMine());
-                if (checkIfGameOver() || GridAdapter.sState == GridAdapter.PlayState.cheat) {
-                    return true;
-                }
-                if (mCells[position].isMineRecovered()
-                        || mCells[position].isMarkedAsMine()
-                        || mCells[position].isRevealed()) {
-                    if (mCells[position].isMineRecovered()) {
-                        mCells[position].setMineRecovered(false);
+        mRecView.addOnItemTouchListener(new RecyclerItemClickListener(this, mRecView,
+                new RecyclerItemClickListener.OnItemClickListener() {
+                    @Override
+                    public void onItemLongClick(View view, int position) {
+                        Log.d(TAG, "Position = " + position + " & is it a MINE? " + mCells[position].isMine());
+                        if (sState == PlayState.cheat) {
+                            return;
+                        }
+                        if (checkIfGameOver()) {
+                            return;
+                        }
+                        if (mCells[position].isMineRecovered()
+                                || mCells[position].isMarkedAsMine()
+                                || mCells[position].isRevealed()) {
+                            if (mCells[position].isMineRecovered()) {
+                                mCells[position].setMineRecovered(false);
+                            }
+                            if (mCells[position].isMarkedAsMine()) {
+                                mCells[position].setIsMarkedAsMine(false);
+                                mMineErrorCount--;
+                            }
+                            if (mCells[position].isRevealed()) {
+                                return;
+                            }
+                            mMineRecoveryCount--;
+                        } else {
+                            if (checkIfValidationPending()) {
+                                return;
+                            }
+                            mMineRecoveryCount++;
+                            if (mCells[position].isMine()) {
+                                mCells[position].setMineRecovered(true);
+                            } else {
+                                mCells[position].setIsMarkedAsMine(true);
+                                mMineErrorCount++;
+                            }
+                        }
+                        updateScore();
+                        if (M == mMineRecoveryCount) {
+                            sState = PlayState.validation_pending;
+                        } else {
+                            sState = PlayState.inPlay;
+                        }
+                        setAnnouncement();
+                        refreshCells();
+                        return;
                     }
-                    if (mCells[position].isMarkedAsMine()) {
-                        mCells[position].setIsMarkedAsMine(false);
-                        mMineErrorCount--;
-                    }
-                    if (mCells[position].isRevealed()) {
-                        return true;
-                    }
-                    mMineRecoveryCount--;
-                } else {
-                    if (checkIfValidationPending()) {
-                        return true;
-                    }
-                    mMineRecoveryCount++;
-                    if (mCells[position].isMine()) {
-                        mCells[position].setMineRecovered(true);
-                    } else {
-                        mCells[position].setIsMarkedAsMine(true);
-                        mMineErrorCount++;
-                    }
-                }
-                updateScore();
-                if (M == mMineRecoveryCount) {
-                    GridAdapter.sState = GridAdapter.PlayState.validation_pending;
-                } else {
-                    GridAdapter.sState = GridAdapter.PlayState.inPlay;
-                }
-                setAnnouncement();
-                refreshCells();
-                return true;
-            }
-        });
 
+                    @Override
+                    public void onItemClick(View view, int position) {
+                        Log.d(TAG, "In GRID OnItemClickListener");
+                        if (sState == PlayState.cheat) {
+                            return;
+                        }
+                        if (checkIfGameOver()
+                                || checkIfValidationPending()
+                                || mCells[position].isMarkedAsMine()
+                                || mCells[position].isMineRecovered()) {
+                            return;
+                        }
+                        sState = PlayState.inPlay;
+                        revealCells(position);
+                        setAnnouncement();
+                        refreshCells();
+                    }
+                }));
+/*
         mReset.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (GridAdapter.sState == GridAdapter.PlayState.inPlay) {
+                if (sState == PlayState.cheat) {
+                    return;
+                }
+                if (sState == PlayState.inPlay) {
                     showAlertDialog(getString(R.string.giving_up), getString(R.string.all_lost), true, ForDialog.doReset);
                 } else {
                     setupMineField();
@@ -164,14 +182,17 @@ public class GameActivity extends AppCompatActivity {
         mValidate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (sState == PlayState.cheat) {
+                    return;
+                }
                 if (checkIfGameOver()) {
                     return;
                 }
                 if (mMineRecoveryCount == M) {
                     if (mMineErrorCount == 0) {
-                        GridAdapter.sState = GridAdapter.PlayState.victory;
+                        sState = PlayState.victory;
                     } else {
-                        GridAdapter.sState = GridAdapter.PlayState.gameOver;
+                        sState = PlayState.gameOver;
                         mInfo.setText(getString(R.string.gameover) + " : " + String.valueOf(mMineErrorCount));
                         mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount-mMineErrorCount));
                     }
@@ -195,13 +216,8 @@ public class GameActivity extends AppCompatActivity {
                 showAlertDialog(getString(R.string.cheater_head), getString(R.string.cheater_body), true, ForDialog.doCheat);
             }
         });
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        Log.d(TAG, "END TIME IS " + System.currentTimeMillis());
+*/
+        startPostponedEnterTransition();
     }
 
     private void setupMineField() {
@@ -220,9 +236,8 @@ public class GameActivity extends AppCompatActivity {
         }
         prepareNeighbours();
         prepareMineCount();
-        mAdapter = new GridAdapter(mCells);
-        mGridView.setAdapter(mAdapter);
-        GridAdapter.sState = GridAdapter.PlayState.start;
+        refreshCells();
+        sState = PlayState.start;
         mMineRecoveryCount=0;
         mMineErrorCount=0;
         mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount));
@@ -293,7 +308,7 @@ public class GameActivity extends AppCompatActivity {
 
     private void revealCells(int position) {
         if (mCells[position].isMine()) {
-            GridAdapter.sState = GridAdapter.PlayState.gameOver;
+            sState = PlayState.gameOver;
             mInfo.setText(getString(R.string.gameover) + " : " + String.valueOf(mMineErrorCount));
             return;
         }
@@ -346,33 +361,29 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void setAnnouncement() {
-        switch(GridAdapter.sState) {
+        switch(sState) {
             case victory:
-                mAnnouncement.setText(getString(R.string.result_victory));
-                mAnnouncement.setTextColor(getResources().getColor(R.color.caught_mine));
+                announceToast(getString(R.string.result_victory));
                 break;
             case gameOver:
-                mAnnouncement.setText(getString(R.string.result_gameover));
-                mAnnouncement.setTextColor(getResources().getColor(R.color.banish_this_mine));
+                announceToast(getString(R.string.result_gameover));
                 break;
             case validation_pending:
-                mAnnouncement.setText(getString(R.string.need_validation));
-                mAnnouncement.setTextColor(getResources().getColor(R.color.secondary_text));
+                announceToast(getString(R.string.need_validation));
                 break;
-            default:
-                mAnnouncement.setText("");
-                mAnnouncement.setTextColor(getResources().getColor(R.color.primary_text));
         }
     }
 
     private void refreshCells() {
-        mAdapter = new GridAdapter(mCells);
-        mGridView.setAdapter(mAdapter);
+        mAdapter = new RecycledCellsAdapter(mCells, this);
+        mRecView.setAdapter(mAdapter);
+        mRecView.setLayoutManager(new GridLayoutManager(this, N, GridLayoutManager.VERTICAL, false));
+        mAdapter.notifyDataSetChanged();
     }
 
     private class CheaterTask extends AsyncTask<Void, Void, Void> {
         int mTimer;
-        GridAdapter.PlayState mOldState;
+        PlayState mOldState;
 
         CheaterTask(int timer) {
             mTimer = timer;
@@ -381,12 +392,11 @@ public class GameActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            mOldState = GridAdapter.sState;
-            GridAdapter.sState = GridAdapter.PlayState.cheat;
-            mAnnouncement.setText(getString(R.string.cheater_announce)
+            mOldState = sState;
+            sState = PlayState.cheat;
+            announceToast(getString(R.string.cheater_announce)
                     + String.valueOf(mTimer)
                     + getString(R.string.cheater_announce_2));
-            mAnnouncement.setTextColor(getResources().getColor(R.color.accent));
             Log.d(TAG, "About to start cheating");
         }
 
@@ -409,7 +419,7 @@ public class GameActivity extends AppCompatActivity {
         protected void onProgressUpdate(Void... values) {
             super.onProgressUpdate(values);
             refreshCells();
-            mAnnouncement.setText(getString(R.string.cheater_announce)
+            announceToast(getString(R.string.cheater_announce)
                     + String.valueOf(mTimer)
                     + getString(R.string.cheater_announce_2));
         }
@@ -417,10 +427,15 @@ public class GameActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            GridAdapter.sState = mOldState;
+            sState = mOldState;
             refreshCells();
-            mAnnouncement.setText("");
-            mAnnouncement.setTextColor(getResources().getColor(R.color.primary_text));
+        }
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+            sState = mOldState;
+            refreshCells();
         }
     }
 
@@ -436,7 +451,8 @@ public class GameActivity extends AppCompatActivity {
                                 setupMineField();
                                 break;
                             case doCheat:
-                                new CheaterTask(C).execute();
+                                mCheater = new CheaterTask(C);
+                                mCheater.execute();
                                 break;
                         }
                         dialog.dismiss();
@@ -453,8 +469,8 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private boolean checkIfGameOver() {
-        if (GridAdapter.sState == GridAdapter.PlayState.gameOver
-                || GridAdapter.sState == GridAdapter.PlayState.victory) {
+        if (sState == PlayState.gameOver
+                || sState == PlayState.victory) {
             showAlertDialog(getString(R.string.done_here), getString(R.string.resetting), false, ForDialog.doReset);
             return true;
         }
@@ -462,7 +478,7 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private boolean checkIfValidationPending() {
-        if (GridAdapter.sState == GridAdapter.PlayState.validation_pending) {
+        if (sState == PlayState.validation_pending) {
             showAlertDialog(getString(R.string.wait), getString(R.string.need_validation), false, ForDialog.doNothing);
             return true;
         }
@@ -472,8 +488,8 @@ public class GameActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        GridAdapter.sState = GridAdapter.PlayState.start;
-        finish();
+        sState = PlayState.start;
+        finishAfterTransition();
     }
 
     private void showLegendDialog() {
@@ -484,45 +500,17 @@ public class GameActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void showWelcomeDialog() {
-        mIsDialogShowing = true;
-        Button newGame;
-        Button exit;
-        final Dialog dialog = new Dialog(this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.activity_welcome);
-        newGame = (Button) dialog.findViewById(R.id.btn_new_game);
-        newGame.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mIsDialogShowing = false;
-                dialog.dismiss();
-            }
-        });
-        exit = (Button) dialog.findViewById(R.id.btn_exit);
-        exit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                finish();
-            }
-        });
-        dialog.setCancelable(false);
-        dialog.show();
-    }
-
     @Override
     public void onBackPressed() {
-        if (!mIsDialogShowing) {
+        if (sState == PlayState.inPlay) {
             new AlertDialog.Builder(this)
                     .setCancelable(false)
                     .setTitle(getString(R.string.confirm_exit))
                     .setMessage(getString(R.string.confirm_exit_message))
                     .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                            showWelcomeDialog();
-                            setupMineField();
                             dialog.dismiss();
+                            finishAfterTransition();
                         }
                     })
                     .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
@@ -531,6 +519,57 @@ public class GameActivity extends AppCompatActivity {
                         }
                     })
                     .show();
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    private void announceToast(String toast) {
+        if (mToast != null) {
+            mToast.cancel();
+        }
+        mToast = Toast.makeText(this, toast, Toast.LENGTH_SHORT);
+        mToast.show();
+    }
+
+    public void OnButtonClick(View v) {
+        Log.d(TAG, "IN OnButtonClick");
+        if (sState == PlayState.cheat) {
+            return;
+        }
+        if (v.getTag().equals(getString(R.string.cheat))) {
+            if (checkIfGameOver()) {
+                return;
+            }
+            showAlertDialog(getString(R.string.cheater_head), getString(R.string.cheater_body), true, ForDialog.doCheat);
+        }
+        if (v.getTag().equals(getString(R.string.validate))) {
+            if (checkIfGameOver()) {
+                return;
+            }
+            if (mMineRecoveryCount == M) {
+                if (mMineErrorCount == 0) {
+                    sState = PlayState.victory;
+                } else {
+                    sState = PlayState.gameOver;
+                    mInfo.setText(getString(R.string.gameover) + " : " + String.valueOf(mMineErrorCount));
+                    mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount-mMineErrorCount));
+                }
+                refreshCells();
+                setAnnouncement();
+            } else {
+                showAlertDialog(getString(R.string.wait),
+                        getString(R.string.cant_validate_1)
+                                + " " + String.valueOf(M - mMineRecoveryCount)
+                                + " " + getString(R.string.cant_validate_2), false, ForDialog.doNothing);
+            }
+        }
+        if (v.getTag().equals(getString(R.string.reset))) {
+            if (sState == PlayState.inPlay) {
+                showAlertDialog(getString(R.string.giving_up), getString(R.string.all_lost), true, ForDialog.doReset);
+            } else {
+                setupMineField();
+            }
         }
     }
 }

@@ -2,8 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:transitionName="NewGame"
-    tools:context=".MainActivity">
+    android:transitionName="NewGame">
 
     <android.support.v7.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
@@ -44,24 +43,12 @@
                 android:paddingEnd="10dp"
                 android:textStyle="bold"/>
         </LinearLayout>
-        <GridView xmlns:android="http://schemas.android.com/apk/res/android"
-            android:id="@+id/gridview"
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recycleCells"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:columnWidth="50dp"
-            android:verticalSpacing="5dp"
-            android:horizontalSpacing="5dp"
-            android:stretchMode="columnWidth"
-            android:gravity="center" />
-        <TextView
-            android:id="@+id/announcement"
-            android:gravity="center_horizontal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="20dp"
-            android:padding="10dp"
-            android:text="@string/app_name"
-            android:textStyle="bold"/>
+            android:layout_gravity="center_horizontal"
+            android:gravity="center_horizontal" />
     </LinearLayout>
 
     <android.support.v7.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
@@ -70,7 +57,6 @@
         android:id="@+id/monitor_toolbar"
         android:background="@color/primary_dark"
         android:layout_alignParentBottom="true"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark"
         android:elevation="4dp">
 
         <LinearLayout
@@ -83,24 +69,29 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
-                style="?android:attr/buttonBarButtonStyle"
                 android:text="@string/cheat"
+                android:tag="@string/cheat"
                 android:textColor="@color/primary_light"
+                android:onClick="OnButtonClick"
                 android:layout_marginEnd="25dp"/>
-            <ImageView
+            <ImageButton
                 android:id="@+id/btn_validate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/ic_smile"
+                android:tag="@string/validate"
+                android:onClick="OnButtonClick"
+                android:elevation="10dp"
                 android:layout_marginEnd="25dp"/>
             <Button
                 android:id="@+id/btn_reset"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:padding="10dp"
-                style="?android:attr/buttonBarButtonStyle"
                 android:text="@string/reset"
+                android:tag="@string/reset"
                 android:textColor="@color/primary_light"
+                android:onClick="OnButtonClick"
                 android:layout_marginEnd="25dp"/>
         </LinearLayout>
     </android.support.v7.widget.Toolbar>

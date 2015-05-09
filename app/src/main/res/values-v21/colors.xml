@@ -12,4 +12,6 @@
     <color name="caught_mine">#ff028e00</color>
     <color name="wrongly_accused_mine">#ffca8d00</color>
     <color name="banish_this_mine">#ffca000c</color>
+    <color name="some_blue">#ff1213ca</color>
+    <color name="some_pink">#ffca0eb6</color>
 </resources>

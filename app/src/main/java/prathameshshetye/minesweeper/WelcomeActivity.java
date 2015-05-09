@@ -16,6 +16,7 @@ import android.widget.Button;
 public class WelcomeActivity extends AppCompatActivity {
 
     private Button mNewGame;
+    private Button mExit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +29,13 @@ public class WelcomeActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startNewGame();
+            }
+        });
+        mExit = (Button) findViewById(R.id.btn_exit);
+        mExit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finishAfterTransition();
             }
         });
     }
