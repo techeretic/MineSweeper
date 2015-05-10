@@ -13,7 +13,7 @@ android {
     buildToolsVersion "21.1.2"
     defaultConfig {
         applicationId "prathameshshetye.minesweeper"
-        minSdkVersion 22
+        minSdkVersion 21
         targetSdkVersion 22
         versionCode 1
         versionName "1.0"

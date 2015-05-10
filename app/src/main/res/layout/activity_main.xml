@@ -65,6 +65,17 @@
             android:gravity="center_horizontal|center_vertical"
             android:orientation="horizontal">
             <Button
+                android:id="@+id/btn_summary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="10dp"
+                android:text="@string/summary"
+                android:tag="@string/summary"
+                android:visibility="gone"
+                android:textColor="@color/primary_light"
+                android:onClick="OnButtonClick"
+                android:layout_marginEnd="25dp"/>
+            <Button
                 android:id="@+id/btn_cheat"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -95,4 +106,9 @@
                 android:layout_marginEnd="25dp"/>
         </LinearLayout>
     </android.support.v7.widget.Toolbar>
+    <Chronometer
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:id="@+id/mytimer"/>
 </RelativeLayout>

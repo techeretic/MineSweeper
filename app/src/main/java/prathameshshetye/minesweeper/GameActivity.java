@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,6 +18,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.Chronometer;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,6 +31,7 @@ public class GameActivity extends AppCompatActivity {
     private int N=10;
     private int M=20;
     private int C=3;
+    private int mElapsedTime;
     private RecyclerView mRecView;
     private RecycledCellsAdapter mAdapter;
     private Toolbar mToolbar;
@@ -37,8 +40,11 @@ public class GameActivity extends AppCompatActivity {
     private ImageButton mValidate;
     private Button mReset;
     private Button mCheat;
+    private Button mSummary;
     private Toast mToast;
     private CheaterTask mCheater;
+    private MenuItem mMenuTimer;
+    private Chronometer mChronoTimer;
     private Cell[] mCells;
     private int mMineRecoveryCount;
     private int mMineErrorCount;
@@ -60,6 +66,8 @@ public class GameActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        mMenuTimer = menu.getItem(0);
+        mMenuTimer.setVisible(false);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -81,10 +89,10 @@ public class GameActivity extends AppCompatActivity {
         N = val[0];
         M = val[1];
         mCells = new Cell[N*N];
-        Log.d(TAG, "N = " + N + ", M = " + M);
         mMineRecoveryCount = 0;
         mMineErrorCount = 0;
 
+        mChronoTimer = (Chronometer) findViewById(R.id.mytimer);
         mRecView = (RecyclerView) findViewById(R.id.recycleCells);
         mScore = (TextView) findViewById(R.id.score);
         mInfo = (TextView) findViewById(R.id.info);
@@ -92,12 +100,25 @@ public class GameActivity extends AppCompatActivity {
         mToolbar.setTitle(R.string.app_name);
         mReset = (Button) findViewById(R.id.btn_reset);
         mCheat = (Button) findViewById(R.id.btn_cheat);
+        mSummary = (Button) findViewById(R.id.btn_summary);
         mValidate = (ImageButton) findViewById(R.id.btn_validate);
 
         mRecView.setHasFixedSize(true);
         sState = PlayState.start;
         setSupportActionBar(mToolbar);
         setupMineField();
+
+        mElapsedTime = 0;
+        mChronoTimer.setOnChronometerTickListener(new Chronometer.OnChronometerTickListener() {
+            @Override
+            public void onChronometerTick(Chronometer chronometer) {
+                if (mMenuTimer != null) {
+                    mMenuTimer.setVisible(true);
+                    mMenuTimer.setTitle(chronometer.getText());
+                }
+                mElapsedTime++;
+            }
+        });
 
         mRecView.addOnItemTouchListener(new RecyclerItemClickListener(this, mRecView,
                 new RecyclerItemClickListener.OnItemClickListener() {
@@ -168,6 +189,7 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void setupMineField() {
+        mElapsedTime = 0;
         new LoadMineFieldTask(this).execute();
     }
 
@@ -235,6 +257,7 @@ public class GameActivity extends AppCompatActivity {
     private void revealCells(int position) {
         if (mCells[position].isMine()) {
             sState = PlayState.gameOver;
+            mChronoTimer.stop();
             mInfo.setText(getString(R.string.gameover) + " : " + String.valueOf(mMineErrorCount));
             return;
         }
@@ -287,12 +310,23 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void setAnnouncement() {
+        String time="00:00";
         switch(sState) {
             case victory:
                 announceToast(getString(R.string.result_victory));
+                if (mChronoTimer != null) {
+                    time = mChronoTimer.getText().toString();
+                }
+                Utilities.getInstance().showSummaryDialog(this, M, mMineRecoveryCount - mMineErrorCount, mMineErrorCount, time);
+                setButtonVisiibilities(true);
                 break;
             case gameOver:
                 announceToast(getString(R.string.result_gameover));
+                if (mChronoTimer != null) {
+                    time = mChronoTimer.getText().toString();
+                }
+                Utilities.getInstance().showSummaryDialog(this, M, mMineRecoveryCount - mMineErrorCount, mMineErrorCount, time);
+                setButtonVisiibilities(true);
                 break;
             case validation_pending:
                 announceToast(getString(R.string.need_validation));
@@ -419,6 +453,11 @@ public class GameActivity extends AppCompatActivity {
         finishAfterTransition();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
     private void showLegendDialog() {
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -484,6 +523,7 @@ public class GameActivity extends AppCompatActivity {
                 }
                 refreshCells();
                 setAnnouncement();
+                setButtonVisiibilities(true);
             } else {
                 showAlertDialog(getString(R.string.wait),
                         getString(R.string.cant_validate_1)
@@ -496,7 +536,15 @@ public class GameActivity extends AppCompatActivity {
                 showAlertDialog(getString(R.string.giving_up), getString(R.string.all_lost), true, ForDialog.doReset);
             } else {
                 setupMineField();
+                setButtonVisiibilities(false);
             }
+        }
+        if (v.getTag().equals(getString(R.string.summary))) {
+            String time="00:00";
+            if (mChronoTimer != null) {
+                time = mChronoTimer.getText().toString();
+            }
+            Utilities.getInstance().showSummaryDialog(this, M, mMineRecoveryCount - mMineErrorCount, mMineErrorCount, time);
         }
     }
 
@@ -551,6 +599,20 @@ public class GameActivity extends AppCompatActivity {
             mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount));
             mInfo.setText(getString(R.string.info) + " : " + M);
             setAnnouncement();
+            mChronoTimer.setBase(SystemClock.elapsedRealtime());
+            mChronoTimer.start();
+        }
+    }
+
+    private void setButtonVisiibilities(boolean showSummary) {
+        if (showSummary) {
+            mSummary.setVisibility(View.VISIBLE);
+            mCheat.setVisibility(View.GONE);
+            mValidate.setVisibility(View.GONE);
+        } else {
+            mSummary.setVisibility(View.GONE);
+            mCheat.setVisibility(View.VISIBLE);
+            mValidate.setVisibility(View.VISIBLE);
         }
     }
 }

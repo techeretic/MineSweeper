@@ -80,11 +80,13 @@ public class RecycledCellsAdapter extends RecyclerView.Adapter<RecycledCellsAdap
                 holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.banish_this_mine));
                 holder.mCellData.setText("M");
             } else {
-                if (mCells[position].getMineCount() != 0) {
-                    holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
+                if (GameActivity.sState == GameActivity.PlayState.victory) {
+                    if (mCells[position].getMineCount() != 0) {
+                        holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
+                    }
+                    holder.mCellData.setTextColor(mContext.getResources().getColor(getColor(mCells[position].getMineCount())));
+                    holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.primary_light));
                 }
-                holder.mCellData.setTextColor(mContext.getResources().getColor(getColor(mCells[position].getMineCount())));
-                holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.primary_light));
             }
             return;
         }

@@ -16,10 +16,10 @@ import android.widget.TextView;
 public class Utilities {
 
     private static Utilities sInstance;
-    private final int MaxGrid=12;
-    private final int MinGrid=8;
-    private final int MaxMines=30;
-    private final int MinMines=10;
+    private final int MaxGrid=10;
+    private final int MinGrid=6;
+    private final int MaxMines=25;
+    private final int MinMines=5;
 
     private final int mDefaultMines = 10;
     private final int mDefaultGrid = 8;
@@ -137,5 +137,38 @@ public class Utilities {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         sp.edit().putInt(spGrid, grid).apply();
         sp.edit().putInt(spMines, mines).apply();
+    }
+
+    public String getTimeString(int totalSeconds) {
+
+        final int MINUTES_IN_AN_HOUR = 60;
+        final int SECONDS_IN_A_MINUTE = 60;
+
+        int seconds = totalSeconds % SECONDS_IN_A_MINUTE;
+        int totalMinutes = totalSeconds / SECONDS_IN_A_MINUTE;
+        int minutes = totalMinutes % MINUTES_IN_AN_HOUR;
+
+        return String.valueOf(minutes) + ":" + String.valueOf(seconds) + " minutes";
+    }
+
+    public void showSummaryDialog(Context context, int total_mines, int caught, int wrong, String strTimeSpent) {
+        TextView recoveredMines;
+        TextView wrongMines;
+        TextView totalMines;
+        TextView timeSpent;
+        final Dialog dialog = new Dialog(context);
+        //dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setTitle(context.getString(R.string.summary));
+        dialog.setContentView(R.layout.summary);
+        dialog.setCancelable(true);
+        recoveredMines = (TextView) dialog.findViewById(R.id.recovered_mines);
+        recoveredMines.setText(String.valueOf(caught));
+        wrongMines = (TextView) dialog.findViewById(R.id.wrong_ones);
+        wrongMines.setText(String.valueOf(wrong));
+        totalMines = (TextView) dialog.findViewById(R.id.allmines);
+        totalMines.setText(String.valueOf(total_mines));
+        timeSpent = (TextView) dialog.findViewById(R.id.time_sp);
+        timeSpent.setText(strTimeSpent);
+        dialog.show();
     }
 }
