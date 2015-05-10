@@ -103,7 +103,6 @@ public class GameActivity extends AppCompatActivity {
         mSummary = (Button) findViewById(R.id.btn_summary);
         mValidate = (ImageButton) findViewById(R.id.btn_validate);
 
-        mRecView.setHasFixedSize(true);
         sState = PlayState.start;
         setSupportActionBar(mToolbar);
         setupMineField();
@@ -190,6 +189,7 @@ public class GameActivity extends AppCompatActivity {
 
     private void setupMineField() {
         mElapsedTime = 0;
+        setButtonVisiibilities(false);
         new LoadMineFieldTask(this).execute();
     }
 
@@ -338,6 +338,7 @@ public class GameActivity extends AppCompatActivity {
         Log.d(TAG, "in refreshCells size = " + mCells.length);
         mAdapter = new RecycledCellsAdapter(mCells, this);
         mRecView.setAdapter(mAdapter);
+        mRecView.setHasFixedSize(true);
         mRecView.setLayoutManager(new GridLayoutManager(this, N, GridLayoutManager.VERTICAL, false));
         mAdapter.notifyDataSetChanged();
     }
@@ -536,7 +537,6 @@ public class GameActivity extends AppCompatActivity {
                 showAlertDialog(getString(R.string.giving_up), getString(R.string.all_lost), true, ForDialog.doReset);
             } else {
                 setupMineField();
-                setButtonVisiibilities(false);
             }
         }
         if (v.getTag().equals(getString(R.string.summary))) {
