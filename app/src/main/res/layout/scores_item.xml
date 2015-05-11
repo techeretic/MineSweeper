@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/timer_holder"
+        android:id="@+id/time_taken"
+        android:textStyle="bold|italic"
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <RelativeLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/time_taken"
+        android:layout_alignParentStart="true">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/grid"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true"
+            android:text="8x8 GRID"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/descrip"
+            android:layout_alignParentTop="true"
+            android:layout_centerInParent="true"
+            android:text="WINNER"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/mines"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:text="10 MINES"/>
+    </RelativeLayout>
+</RelativeLayout>
