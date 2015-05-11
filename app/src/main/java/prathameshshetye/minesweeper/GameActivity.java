@@ -31,7 +31,8 @@ public class GameActivity extends AppCompatActivity {
     private int N=10;
     private int M=20;
     private int C=3;
-    private int mElapsedTime;
+    private long mElapsedTime;
+    private String mFinalChronoText;
     private boolean mIsVictorious;
     private RecyclerView mRecView;
     private RecycledCellsAdapter mAdapter;
@@ -515,8 +516,8 @@ public class GameActivity extends AppCompatActivity {
             } else {
                 showAlertDialog(getString(R.string.wait),
                         getString(R.string.cant_validate_1)
-                                + " " + String.valueOf(M - mMineRecoveryCount)
-                                + " " + getString(R.string.cant_validate_2), false, ForDialog.doNothing);
+                                + String.valueOf(M - mMineRecoveryCount)
+                                + getString(R.string.cant_validate_2), false, ForDialog.doNothing);
             }
         }
         if (v.getTag().equals(getString(R.string.reset))) {
@@ -527,7 +528,10 @@ public class GameActivity extends AppCompatActivity {
             }
         }
         if (v.getTag().equals(getString(R.string.summary))) {
-            createGameSummary(mIsVictorious);
+
+            Utilities.getInstance().showSummaryDialog(this, M,
+                    mMineRecoveryCount - mMineErrorCount, mMineErrorCount,
+                    mFinalChronoText, mIsVictorious);
         }
     }
 
@@ -582,6 +586,8 @@ public class GameActivity extends AppCompatActivity {
             mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount));
             mInfo.setText(getString(R.string.info) + " : " + M);
             setAnnouncement();
+            mElapsedTime = 0;
+            mFinalChronoText="00:00";
             mChronoTimer.setBase(SystemClock.elapsedRealtime());
             mChronoTimer.start();
         }
@@ -605,12 +611,23 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void createGameSummary(boolean isVictorious) {
-        String time="00:00";
         if (mChronoTimer != null) {
             mChronoTimer.stop();
-            time = mChronoTimer.getText().toString();
+            mFinalChronoText = mChronoTimer.getText().toString();
+            mElapsedTime = (SystemClock.elapsedRealtime() - mChronoTimer.getBase())/1000;
         }
-        Utilities.getInstance().showSummaryDialog(this, M, mMineRecoveryCount - mMineErrorCount, mMineErrorCount, time, isVictorious);
+        Utilities.getInstance().showSummaryDialog(this, M,
+                mMineRecoveryCount - mMineErrorCount, mMineErrorCount,
+                mFinalChronoText, isVictorious);
         setButtonVisibilities(true);
+        if (isVictorious) {
+            ScoreDatabaseHelper.getInstance(this).saveScore(new Score(
+                    (int) mElapsedTime,
+                    N,
+                    M,
+                    System.currentTimeMillis(),
+                    ""
+            ));
+        }
     }
 }

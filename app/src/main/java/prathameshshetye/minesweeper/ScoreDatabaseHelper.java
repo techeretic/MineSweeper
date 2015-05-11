@@ -28,6 +28,7 @@ public class ScoreDatabaseHelper extends SQLiteOpenHelper {
     private static final String KEY_TIME_TAKEN = "timeTaken";
     private static final String KEY_CELLS = "cells";
     private static final String KEY_MINES = "mines";
+    private static final String KEY_WHEN = "time_when";
     private static final String KEY_DESCRIP = "descrip";
 
     private static ScoreDatabaseHelper mInstance = null;
@@ -51,6 +52,7 @@ public class ScoreDatabaseHelper extends SQLiteOpenHelper {
                         + KEY_TIME_TAKEN + " INTEGER, "
                         + KEY_CELLS + " INTEGER, "
                         + KEY_MINES + " INTEGER, "
+                        + KEY_WHEN + " INTEGER, "
                         + KEY_DESCRIP + " TEXT "
                         + ")";
         db.execSQL(CREATE_SCORES);
@@ -69,6 +71,7 @@ public class ScoreDatabaseHelper extends SQLiteOpenHelper {
         values.put(KEY_TIME_TAKEN, score.getTimeTaken());
         values.put(KEY_CELLS, score.getCells());
         values.put(KEY_MINES, score.getMines());
+        values.put(KEY_WHEN, score.getWhen());
         values.put(KEY_DESCRIP, score.getDescrip());
 
         long id = db.insert(TABLE_NAME, null, values);
@@ -85,6 +88,7 @@ public class ScoreDatabaseHelper extends SQLiteOpenHelper {
                 + KEY_TIME_TAKEN + ","
                 + KEY_CELLS + ","
                 + KEY_MINES + ","
+                + KEY_WHEN + ","
                 + KEY_DESCRIP + " FROM "
                 + TABLE_NAME;
         Cursor cursor = db.rawQuery(selectQuery, null);
@@ -96,7 +100,8 @@ public class ScoreDatabaseHelper extends SQLiteOpenHelper {
                         cursor.getInt(1),
                         cursor.getInt(2),
                         cursor.getInt(3),
-                        cursor.getString(4)
+                        cursor.getLong(4),
+                        cursor.getString(5)
                 ));
             } while(cursor.moveToNext());
         }
@@ -113,6 +118,7 @@ public class ScoreDatabaseHelper extends SQLiteOpenHelper {
                 KEY_TIME_TAKEN,
                 KEY_CELLS,
                 KEY_MINES,
+                KEY_WHEN,
                 KEY_DESCRIP
         }, KEY_ID + "=?", new String[]{
                 String.valueOf(_id)
@@ -131,7 +137,8 @@ public class ScoreDatabaseHelper extends SQLiteOpenHelper {
             cursor.getInt(1),
             cursor.getInt(2),
             cursor.getInt(3),
-            cursor.getString(4)
+            cursor.getLong(4),
+            cursor.getString(5)
         );
         cursor.close();
         db.close();
@@ -145,6 +152,7 @@ public class ScoreDatabaseHelper extends SQLiteOpenHelper {
         values.put(KEY_TIME_TAKEN, score.getTimeTaken());
         values.put(KEY_CELLS, score.getCells());
         values.put(KEY_MINES, score.getMines());
+        values.put(KEY_WHEN, score.getWhen());
         values.put(KEY_DESCRIP, score.getDescrip());
 
         int id = db.update(TABLE_NAME, values, KEY_ID + " = ?", new String[]{
@@ -154,4 +162,17 @@ public class ScoreDatabaseHelper extends SQLiteOpenHelper {
         return id;
     }
 
+    public boolean isTableEmpty() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_NAME, null);
+        cursor.moveToFirst();
+        int size = cursor.getInt(0);
+        cursor.close();
+        db.close();
+        if (size == 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

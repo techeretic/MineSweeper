@@ -8,20 +8,23 @@ public class Score {
     private int mTimeTaken;
     private int mCells;
     private int mMines;
+    private long mWhen;
     private String mDescrip;
 
-    public Score(int mTimeTaken, int mCells, int mMines, String mDescrip) {
+    public Score(int mTimeTaken, int mCells, int mMines, long when, String mDescrip) {
         this.mTimeTaken = mTimeTaken;
         this.mCells = mCells;
         this.mMines = mMines;
+        this.mWhen = when;
         this.mDescrip = mDescrip;
     }
 
-    public Score(int id, int mTimeTaken, int mCells, int mMines, String mDescrip) {
+    public Score(int id, int mTimeTaken, int mCells, int mMines, long when, String mDescrip) {
         this.mId = id;
         this.mTimeTaken = mTimeTaken;
         this.mCells = mCells;
         this.mMines = mMines;
+        this.mWhen = when;
         this.mDescrip = mDescrip;
     }
 
@@ -63,5 +66,13 @@ public class Score {
 
     public void setId(int mId) {
         this.mId = mId;
+    }
+
+    public long getWhen() {
+        return mWhen;
+    }
+
+    public void setWhen(long mWhen) {
+        this.mWhen = mWhen;
     }
 }

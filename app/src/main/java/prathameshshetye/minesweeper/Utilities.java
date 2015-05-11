@@ -196,4 +196,5 @@ public class Utilities {
         webView.loadUrl("file:///android_asset/how_to_play.html");
         d.show();
     }
+
 }

@@ -29,7 +29,8 @@
         </activity>
         <activity
             android:name=".Scores"
-            android:label="@string/title_activity_scores"
+            android:label="@string/scores"
+            android:screenOrientation="portrait"
             android:parentActivityName=".WelcomeActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

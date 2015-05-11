@@ -2,15 +2,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="prathameshshetye.minesweeper.WelcomeActivity">
-
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/background"
-        android:scaleType="centerCrop"
-        android:src="@drawable/intro_background"
-        android:layout_alignParentBottom="true"/>
+    tools:context="prathameshshetye.minesweeper.WelcomeActivity"
+    android:background="@drawable/intro_background">
 
     <TextView
         android:layout_width="wrap_content"
@@ -41,9 +34,21 @@
     <Button
         android:layout_width="200dp"
         android:layout_height="wrap_content"
+        android:text="@string/scores"
+        android:id="@+id/btn_score"
+        android:layout_below="@+id/btn_new_game"
+        android:layout_centerHorizontal="true"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
+        android:textSize="18sp"
+        android:elevation="10dp" />
+
+    <Button
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
         android:text="@string/settings"
         android:id="@+id/btn_settings"
-        android:layout_below="@+id/btn_new_game"
+        android:layout_below="@+id/btn_score"
         android:layout_centerHorizontal="true"
         android:paddingTop="20dp"
         android:paddingBottom="20dp"
@@ -73,5 +78,13 @@
         android:paddingBottom="20dp"
         android:textSize="18sp"
         android:elevation="10dp" />
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/background"
+        android:scaleType="centerCrop"
+        android:src="@drawable/intro_background"
+        android:layout_alignParentBottom="true"/>
 
 </RelativeLayout>

@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingStart="15dp"
+    android:paddingEnd="15dp"
+    android:paddingTop="15dp"
+    android:paddingBottom="15dp"
+    android:layout_marginTop="5dp"
+    android:clickable="true"
+    android:background="@drawable/recview_ripple">
 
     <TextView
         android:layout_width="match_parent"
@@ -13,6 +21,7 @@
         android:layout_alignParentStart="true" />
 
     <RelativeLayout
+        android:id="@+id/minefield_info"
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -23,21 +32,27 @@
             android:layout_height="wrap_content"
             android:id="@+id/grid"
             android:layout_alignParentTop="true"
-            android:layout_alignParentStart="true"
-            android:text="8x8 GRID"/>
+            android:layout_alignParentStart="true"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/descrip"
             android:layout_alignParentTop="true"
-            android:layout_centerInParent="true"
-            android:text="WINNER"/>
+            android:layout_centerInParent="true"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/mines"
             android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true"
-            android:text="10 MINES"/>
+            android:layout_alignParentEnd="true"/>
     </RelativeLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/when"
+        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
+        android:layout_below="@+id/minefield_info"
+        android:layout_alignParentEnd="true"/>
+
 </RelativeLayout>

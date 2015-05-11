@@ -12,8 +12,8 @@
     <string name="gameover">Incorrect Marked Mines</string>
     <string name="result_victory">VICTORY</string>
     <string name="result_gameover">GAME-OVER</string>
-    <string name="cant_validate_1">You still need to find </string>
-    <string name="cant_validate_2">Mines</string>
+    <string name="cant_validate_1">You still need to find&#160;</string>
+    <string name="cant_validate_2">&#160;Mines</string>
     <string name="wait">Hold On</string>
     <string name="need_validation">You need to run validation.\n\nClick the Smiley!</string>
     <string name="done_here">You\'re done here</string>
@@ -44,5 +44,10 @@
     <string name="summary">Summary</string>
     <string name="time_spent">Time spent sweeping for mines</string>
     <string name="how_to">How to Play?</string>
-    <string name="title_activity_scores">Scores</string>
+    <string name="scores">Scores</string>
+    <string name="completed_in">Completed in&#160;</string>
+    <string name="append_grid">&#160;GRID</string>
+    <string name="append_minutes">&#160;min&#160;</string>
+    <string name="append_seconds">&#160;sec</string>
+    <string name="prefix_On">On&#160;</string>
 </resources>
