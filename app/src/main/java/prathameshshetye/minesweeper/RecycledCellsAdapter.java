@@ -1,12 +1,15 @@
 package prathameshshetye.minesweeper;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 /**
@@ -14,8 +17,12 @@ import android.widget.TextView;
  */
 public class RecycledCellsAdapter extends RecyclerView.Adapter<RecycledCellsAdapter.ViewHolder> {
 
-    Cell[] mCells;
-    Context mContext;
+    private final String mCheaterUri = "@drawable/ic_mine_cheat.png";
+    private final String mFlagMine = "@drawable/ic_flag_mine.png";
+    private final String mGameOver = "@drawable/ic_mine_explode.png";
+
+    private Cell[] mCells;
+    private Context mContext;
 
     public RecycledCellsAdapter(Cell[] cells, Context context) {
         mCells = cells;
@@ -37,8 +44,9 @@ public class RecycledCellsAdapter extends RecyclerView.Adapter<RecycledCellsAdap
         }
         if (GameActivity.sState == GameActivity.PlayState.cheat) {
             if (mCells[position].isMine()) {
-                holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.banish_this_mine));
-                holder.mCellData.setText("M");
+                holder.mCell.setImageDrawable(mContext.getDrawable(R.drawable.ic_mine_cheat));
+                //holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.banish_this_mine));
+                holder.mCellData.setText("");
                 Animation slideInTop = AnimationUtils.loadAnimation(mContext,
                         R.anim.abc_fade_in);
                 slideInTop.setDuration(750);
@@ -47,13 +55,22 @@ public class RecycledCellsAdapter extends RecyclerView.Adapter<RecycledCellsAdap
             }
             return;
         }
+        if (mCells[position].didCauseExplosion()) {
+            holder.mCell.setImageDrawable(mContext.getDrawable(R.drawable.ic_blast));
+            holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.primary_light));
+            holder.mCellData.setText("");
+            return;
+        }
         if (mCells[position].isMineRecovered() || mCells[position].isMarkedAsMine()) {
             if (mCells[position].isMarkedAsMine() && GameActivity.sState == GameActivity.PlayState.gameOver) {
-                holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.wrongly_accused_mine));
+                holder.mCell.setImageDrawable(mContext.getDrawable(R.drawable.ic_wrong_mine));
+                //holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.wrongly_accused_mine));
             } else {
-                holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.caught_mine));
+                holder.mCell.setImageDrawable(mContext.getDrawable(R.drawable.ic_flag_mine));
+                //holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.caught_mine));
             }
-            holder.mCellData.setText("M");
+            holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.primary_light));
+            holder.mCellData.setText("");
             return;
         }
         if (mCells[position].isRevealed()) {
@@ -77,16 +94,18 @@ public class RecycledCellsAdapter extends RecyclerView.Adapter<RecycledCellsAdap
         if (GameActivity.sState == GameActivity.PlayState.gameOver ||
                 GameActivity.sState == GameActivity.PlayState.victory) {
             if (mCells[position].isMine()) {
-                holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.banish_this_mine));
-                holder.mCellData.setText("M");
-            } else {
+                holder.mCell.setImageDrawable(mContext.getDrawable(R.drawable.ic_shown_mine));
+                holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.primary_light));
+                //holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.banish_this_mine));
+                holder.mCellData.setText("");
+            }
+            /*else {
                 if (mCells[position].getMineCount() != 0) {
                     holder.mCellData.setText(String.valueOf(mCells[position].getMineCount()));
                 }
                 holder.mCellData.setTextColor(mContext.getResources().getColor(getColor(mCells[position].getMineCount())));
                 holder.mCell.setBackgroundColor(mContext.getResources().getColor(R.color.primary_light));
-            }
-            return;
+            }*/
         }
     }
 
@@ -96,11 +115,11 @@ public class RecycledCellsAdapter extends RecyclerView.Adapter<RecycledCellsAdap
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        View mCell;
+        ImageView mCell;
         TextView mCellData;
         public ViewHolder(View view) {
             super(view);
-            mCell = view.findViewById(R.id.cell);
+            mCell = (ImageView) view.findViewById(R.id.cell);
             mCellData = (TextView) view.findViewById(R.id.cellData);
         }
     }

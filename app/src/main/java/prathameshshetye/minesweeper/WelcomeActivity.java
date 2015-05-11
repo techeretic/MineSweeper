@@ -1,5 +1,6 @@
 package prathameshshetye.minesweeper;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -18,8 +19,6 @@ import android.widget.ImageView;
 public class WelcomeActivity extends AppCompatActivity {
 
     private Button mNewGame;
-    private ImageView mSettings;
-    private Button mExit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,24 +33,35 @@ public class WelcomeActivity extends AppCompatActivity {
                 startNewGame();
             }
         });
-        mExit = (Button) findViewById(R.id.btn_exit);
-        mExit.setOnClickListener(new View.OnClickListener() {
+        Button exit = (Button) findViewById(R.id.btn_exit);
+        exit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 finishAfterTransition();
             }
         });
-        mSettings = (ImageView) findViewById(R.id.settingsButton);
-        mSettings.setOnClickListener(new View.OnClickListener() {
+        Button settings = (Button) findViewById(R.id.btn_settings);
+        settings.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 startSettingsDialog();
+            }
+        });
+        Button howTo = (Button) findViewById(R.id.btn_how_to);
+        howTo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showHowToPlay();
             }
         });
     }
 
     private void startSettingsDialog() {
         Utilities.getInstance().showSettingsDialog(this);
+    }
+
+    private void showHowToPlay() {
+        Utilities.getInstance().showHowToPlay(this);
     }
 
     private void startNewGame() {

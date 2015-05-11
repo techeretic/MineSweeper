@@ -9,6 +9,7 @@
     <color name="secondary_text">#727272</color>
     <color name="icons">#212121</color>
     <color name="divider">#B6B6B6</color>
+
     <color name="caught_mine">#ff028e00</color>
     <color name="wrongly_accused_mine">#ffca8d00</color>
     <color name="banish_this_mine">#ffca000c</color>

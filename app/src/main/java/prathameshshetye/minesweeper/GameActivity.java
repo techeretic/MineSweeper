@@ -32,6 +32,7 @@ public class GameActivity extends AppCompatActivity {
     private int M=20;
     private int C=3;
     private int mElapsedTime;
+    private boolean mIsVictorious;
     private RecyclerView mRecView;
     private RecycledCellsAdapter mAdapter;
     private Toolbar mToolbar;
@@ -75,7 +76,8 @@ public class GameActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_info:
-                showLegendDialog();
+                //showLegendDialog();
+                Utilities.getInstance().showHowToPlay(this);
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -156,7 +158,7 @@ public class GameActivity extends AppCompatActivity {
                                 mMineErrorCount++;
                             }
                         }
-                        updateScore();
+                        mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount));
                         if (M == mMineRecoveryCount) {
                             sState = PlayState.validation_pending;
                         } else {
@@ -169,7 +171,6 @@ public class GameActivity extends AppCompatActivity {
 
                     @Override
                     public void onItemClick(View view, int position) {
-                        Log.d(TAG, "In GRID OnItemClickListener");
                         if (sState == PlayState.cheat) {
                             return;
                         }
@@ -187,9 +188,44 @@ public class GameActivity extends AppCompatActivity {
                 }));
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        sState = PlayState.start;
+        finishAfterTransition();
+    }
+
+    @Override
+    public void onBackPressed() {
+        switch(sState) {
+            case inPlay:
+                new AlertDialog.Builder(this)
+                        .setCancelable(false)
+                        .setTitle(getString(R.string.confirm_exit))
+                        .setMessage(getString(R.string.confirm_exit_message))
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                                finishAfterTransition();
+                            }
+                        })
+                        .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .show();
+                break;
+            case cheat:
+                return;
+            default:
+                super.onBackPressed();
+        }
+    }
+
     private void setupMineField() {
         mElapsedTime = 0;
-        setButtonVisiibilities(false);
+        setButtonVisibilities(false);
         new LoadMineFieldTask(this).execute();
     }
 
@@ -250,13 +286,10 @@ public class GameActivity extends AppCompatActivity {
         }
     }
 
-    private void updateScore() {
-        mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount));
-    }
-
     private void revealCells(int position) {
         if (mCells[position].isMine()) {
             sState = PlayState.gameOver;
+            mCells[position].setCausedExplosion(true);
             mChronoTimer.stop();
             mInfo.setText(getString(R.string.gameover) + " : " + String.valueOf(mMineErrorCount));
             return;
@@ -310,23 +343,16 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void setAnnouncement() {
-        String time="00:00";
         switch(sState) {
             case victory:
-                announceToast(getString(R.string.result_victory));
-                if (mChronoTimer != null) {
-                    time = mChronoTimer.getText().toString();
-                }
-                Utilities.getInstance().showSummaryDialog(this, M, mMineRecoveryCount - mMineErrorCount, mMineErrorCount, time);
-                setButtonVisiibilities(true);
+                mIsVictorious = true;
+                createGameSummary(mIsVictorious);
                 break;
             case gameOver:
-                announceToast(getString(R.string.result_gameover));
-                if (mChronoTimer != null) {
-                    time = mChronoTimer.getText().toString();
-                }
-                Utilities.getInstance().showSummaryDialog(this, M, mMineRecoveryCount - mMineErrorCount, mMineErrorCount, time);
-                setButtonVisiibilities(true);
+                mIsVictorious = false;
+                mInfo.setText(getString(R.string.gameover) + " : " + String.valueOf(mMineErrorCount));
+                mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount-mMineErrorCount));
+                createGameSummary(mIsVictorious);
                 break;
             case validation_pending:
                 announceToast(getString(R.string.need_validation));
@@ -447,48 +473,12 @@ public class GameActivity extends AppCompatActivity {
         return false;
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        sState = PlayState.start;
-        finishAfterTransition();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
-
     private void showLegendDialog() {
         Dialog dialog = new Dialog(this);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.legend);
         dialog.setCancelable(true);
         dialog.show();
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (sState == PlayState.inPlay) {
-            new AlertDialog.Builder(this)
-                    .setCancelable(false)
-                    .setTitle(getString(R.string.confirm_exit))
-                    .setMessage(getString(R.string.confirm_exit_message))
-                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                            finishAfterTransition();
-                        }
-                    })
-                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    })
-                    .show();
-        } else {
-            super.onBackPressed();
-        }
     }
 
     private void announceToast(String toast) {
@@ -519,12 +509,9 @@ public class GameActivity extends AppCompatActivity {
                     sState = PlayState.victory;
                 } else {
                     sState = PlayState.gameOver;
-                    mInfo.setText(getString(R.string.gameover) + " : " + String.valueOf(mMineErrorCount));
-                    mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount-mMineErrorCount));
                 }
                 refreshCells();
                 setAnnouncement();
-                setButtonVisiibilities(true);
             } else {
                 showAlertDialog(getString(R.string.wait),
                         getString(R.string.cant_validate_1)
@@ -540,11 +527,7 @@ public class GameActivity extends AppCompatActivity {
             }
         }
         if (v.getTag().equals(getString(R.string.summary))) {
-            String time="00:00";
-            if (mChronoTimer != null) {
-                time = mChronoTimer.getText().toString();
-            }
-            Utilities.getInstance().showSummaryDialog(this, M, mMineRecoveryCount - mMineErrorCount, mMineErrorCount, time);
+            createGameSummary(mIsVictorious);
         }
     }
 
@@ -604,8 +587,13 @@ public class GameActivity extends AppCompatActivity {
         }
     }
 
-    private void setButtonVisiibilities(boolean showSummary) {
+    private void setButtonVisibilities(boolean showSummary) {
         if (showSummary) {
+            if (mIsVictorious) {
+                mSummary.setText(getString(R.string.result_victory) + " " + getString(R.string.summary));
+            } else {
+                mSummary.setText(getString(R.string.result_gameover) + " " + getString(R.string.summary));
+            }
             mSummary.setVisibility(View.VISIBLE);
             mCheat.setVisibility(View.GONE);
             mValidate.setVisibility(View.GONE);
@@ -614,5 +602,15 @@ public class GameActivity extends AppCompatActivity {
             mCheat.setVisibility(View.VISIBLE);
             mValidate.setVisibility(View.VISIBLE);
         }
+    }
+
+    private void createGameSummary(boolean isVictorious) {
+        String time="00:00";
+        if (mChronoTimer != null) {
+            mChronoTimer.stop();
+            time = mChronoTimer.getText().toString();
+        }
+        Utilities.getInstance().showSummaryDialog(this, M, mMineRecoveryCount - mMineErrorCount, mMineErrorCount, time, isVictorious);
+        setButtonVisibilities(true);
     }
 }

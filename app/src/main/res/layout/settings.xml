@@ -90,7 +90,7 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/cancel"
+            android:text="@android:string/cancel"
             android:id="@+id/btn_cancel"
             android:layout_gravity="center"
             android:paddingStart="30dp"

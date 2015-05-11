@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:paddingTop="20dp"
-    android:paddingBottom="20dp">
+    android:paddingBottom="20dp"
+    android:id="@+id/summary_layout">
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
@@ -12,6 +13,7 @@
         android:gravity="center_vertical"
         android:id="@+id/recovered"
         android:paddingStart="20dp"
+        android:paddingEnd="20dp"
         android:paddingTop="10dp"
         android:paddingBottom="10dp">
 
@@ -118,4 +120,15 @@
             android:text="@string/time_spent"
             android:layout_gravity="start" />
     </LinearLayout>
+    <TextView
+        android:id="@+id/banner"
+        android:layout_below="@+id/time_spent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:text="@string/summary"
+        android:layout_marginTop="10dp"
+        android:layout_centerInParent="true"/>
 </RelativeLayout>

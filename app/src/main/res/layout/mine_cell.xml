@@ -10,7 +10,7 @@
     android:layout_marginStart="1.5dp"
     android:layout_marginEnd="1.5dp">
 
-    <View
+    <ImageView
         android:id="@+id/cell"
         android:clickable="false"
         android:focusable="false"

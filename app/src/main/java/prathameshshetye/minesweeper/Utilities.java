@@ -6,7 +6,9 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.view.View;
 import android.view.Window;
+import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -151,24 +153,47 @@ public class Utilities {
         return String.valueOf(minutes) + ":" + String.valueOf(seconds) + " minutes";
     }
 
-    public void showSummaryDialog(Context context, int total_mines, int caught, int wrong, String strTimeSpent) {
-        TextView recoveredMines;
-        TextView wrongMines;
-        TextView totalMines;
-        TextView timeSpent;
+    public void showSummaryDialog(Context context, int total_mines, int caught, int wrong, String strTimeSpent, boolean isVictory) {
         final Dialog dialog = new Dialog(context);
         //dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setTitle(context.getString(R.string.summary));
         dialog.setContentView(R.layout.summary);
         dialog.setCancelable(true);
-        recoveredMines = (TextView) dialog.findViewById(R.id.recovered_mines);
+        TextView recoveredMines = (TextView) dialog.findViewById(R.id.recovered_mines);
         recoveredMines.setText(String.valueOf(caught));
-        wrongMines = (TextView) dialog.findViewById(R.id.wrong_ones);
+        TextView wrongMines = (TextView) dialog.findViewById(R.id.wrong_ones);
         wrongMines.setText(String.valueOf(wrong));
-        totalMines = (TextView) dialog.findViewById(R.id.allmines);
+        TextView totalMines = (TextView) dialog.findViewById(R.id.allmines);
         totalMines.setText(String.valueOf(total_mines));
-        timeSpent = (TextView) dialog.findViewById(R.id.time_sp);
+        TextView timeSpent = (TextView) dialog.findViewById(R.id.time_sp);
         timeSpent.setText(strTimeSpent);
+        TextView banner = (TextView) dialog.findViewById(R.id.banner);
+        if (isVictory) {
+            banner.setText(context.getString(R.string.result_victory));
+            banner.setTextColor(context.getResources().getColor(R.color.caught_mine));
+        } else {
+            banner.setText(context.getString(R.string.result_gameover));
+            banner.setTextColor(context.getResources().getColor(R.color.banish_this_mine));
+        }
+        final int layoutTagKey = 1;
+        RelativeLayout summaryLayout = (RelativeLayout) dialog.findViewById(R.id.summary_layout);
+        summaryLayout.setTag(R.id.summary_layout, dialog);
+        summaryLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ((Dialog)view.getTag(R.id.summary_layout)).dismiss();
+            }
+        });
         dialog.show();
+    }
+
+    public void showHowToPlay(Context context) {
+        final Dialog d = new Dialog(context);
+        d.setContentView(R.layout.how_to_play);
+        d.setTitle(context.getString(R.string.how_to));
+        d.setCancelable(true);
+        WebView webView = (WebView) d.findViewById(R.id.webView);
+        webView.loadUrl("file:///android_asset/how_to_play.html");
+        d.show();
     }
 }

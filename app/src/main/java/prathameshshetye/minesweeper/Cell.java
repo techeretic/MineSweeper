@@ -12,6 +12,7 @@ public class Cell {
     private boolean mIsRevealed;
     private boolean mMineRecovered;
     private boolean mIsMarkedAsMine;
+    private boolean mCausedExplosion;
     private HashSet<Integer> mNeighbours;
     private int mMineCount;
 
@@ -19,6 +20,10 @@ public class Cell {
         mNum = num;
         mIsMine = isMine;
         mIsAnimated = false;
+        mIsRevealed = false;
+        mIsMarkedAsMine = false;
+        mMineRecovered = false;
+        mCausedExplosion = false;
         mNeighbours = new HashSet<>();
     }
 
@@ -76,6 +81,14 @@ public class Cell {
 
     public void setIsMarkedAsMine(boolean isMarkedAsMine) {
         this.mIsMarkedAsMine = isMarkedAsMine;
+    }
+
+    public boolean didCauseExplosion() {
+        return mCausedExplosion;
+    }
+
+    public void setCausedExplosion(boolean mCausedExplosion) {
+        this.mCausedExplosion = mCausedExplosion;
     }
 
     public void addToNeighbours(int val) {
