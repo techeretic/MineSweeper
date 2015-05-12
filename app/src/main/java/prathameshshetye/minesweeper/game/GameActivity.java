@@ -1,4 +1,4 @@
-package prathameshshetye.minesweeper;
+package prathameshshetye.minesweeper.game;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -24,6 +24,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.Random;
+
+import prathameshshetye.minesweeper.R;
+import prathameshshetye.minesweeper.generic.Cell;
+import prathameshshetye.minesweeper.generic.RecyclerItemClickListener;
+import prathameshshetye.minesweeper.generic.Utilities;
+import prathameshshetye.minesweeper.score.Score;
+import prathameshshetye.minesweeper.score.ScoreDatabaseHelper;
 
 public class GameActivity extends AppCompatActivity {
 
@@ -51,6 +58,8 @@ public class GameActivity extends AppCompatActivity {
     private int mMineRecoveryCount;
     private int mMineErrorCount;
     private int[][] mMatrix;
+    private boolean mLoadSavedGame;
+    private boolean mSaveGame;
     private enum ForDialog {
         doCheat,
         doReset,
@@ -77,7 +86,6 @@ public class GameActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_info:
-                //showLegendDialog();
                 Utilities.getInstance().showHowToPlay(this);
                 return true;
         }
@@ -87,6 +95,7 @@ public class GameActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mLoadSavedGame = getIntent().getBooleanExtra(Utilities.SAVED_GAME, false);
         setContentView(R.layout.activity_main);
         int [] val = Utilities.getInstance().getSavedValues(this);
         N = val[0];
@@ -190,17 +199,26 @@ public class GameActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        sState = PlayState.start;
-        finishAfterTransition();
+    protected void onStop() {
+        if (!Utilities.getInstance().anyPriorSavedGame(this) && mSaveGame) {
+            startSaveGameTask(N, mCells, false);
+        }
+        super.onStop();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        mSaveGame = true;
     }
 
     @Override
     public void onBackPressed() {
+        mSaveGame = false;
         switch(sState) {
             case inPlay:
-                new AlertDialog.Builder(this)
+                AlertDialog ad = new AlertDialog.Builder(this)
                         .setCancelable(false)
                         .setTitle(getString(R.string.confirm_exit))
                         .setMessage(getString(R.string.confirm_exit_message))
@@ -214,8 +232,15 @@ public class GameActivity extends AppCompatActivity {
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
                             }
-                        })
-                        .show();
+                        }).create();
+                ad.setButton(AlertDialog.BUTTON_NEUTRAL, getString(R.string.save_game), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int i) {
+                        dialog.dismiss();
+                        startSaveGameTask(N, mCells, true);
+                    }
+                });
+                ad.show();
                 break;
             case cheat:
                 return;
@@ -227,7 +252,11 @@ public class GameActivity extends AppCompatActivity {
     private void setupMineField() {
         mElapsedTime = 0;
         setButtonVisibilities(false);
-        new LoadMineFieldTask(this).execute();
+        if (mLoadSavedGame) {
+            new LoadSavedGameTask(this).execute();
+        } else {
+            new LoadMineFieldTask(this).execute();
+        }
     }
 
     private void prepareNeighbours() {
@@ -362,12 +391,10 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void refreshCells() {
-        Log.d(TAG, "in refreshCells size = " + mCells.length);
         mAdapter = new RecycledCellsAdapter(mCells, this);
         mRecView.setAdapter(mAdapter);
         mRecView.setHasFixedSize(true);
         mRecView.setLayoutManager(new GridLayoutManager(this, N, GridLayoutManager.VERTICAL, false));
-        mAdapter.notifyDataSetChanged();
     }
 
     private class CheaterTask extends AsyncTask<Void, Void, Void> {
@@ -386,12 +413,10 @@ public class GameActivity extends AppCompatActivity {
             announceToast(getString(R.string.cheater_announce)
                     + String.valueOf(mTimer)
                     + getString(R.string.cheater_announce_2));
-            Log.d(TAG, "About to start cheating");
         }
 
         @Override
         protected Void doInBackground(Void... params) {
-            Log.d(TAG, "Cheating in progress");
             while(mTimer > 0) {
                 try {
                     publishProgress();
@@ -491,7 +516,6 @@ public class GameActivity extends AppCompatActivity {
     }
 
     public void OnButtonClick(View v) {
-        Log.d(TAG, "IN OnButtonClick");
         if (sState == PlayState.cheat) {
             return;
         }
@@ -629,5 +653,131 @@ public class GameActivity extends AppCompatActivity {
                     ""
             ));
         }
+    }
+
+    private class LoadSavedGameTask extends AsyncTask<Void, Void, Void> {
+        private Context mContext;
+        private ProgressDialog mPDiag;
+        private int mElapse;
+
+        LoadSavedGameTask(Context context) {
+            this.mContext = context;
+            mElapse = 0;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mPDiag = new ProgressDialog(mContext);
+            mPDiag.setCancelable(false);
+            mPDiag.setMessage(getString(R.string.loading));
+            mPDiag.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            mCells = Utilities.getInstance().retrieveSavedGame(mContext);
+            Bundle b = Utilities.getInstance().getSavedProperties(mContext);
+            N = b.getInt(Utilities.SP_KEY_GRID);
+            M = b.getInt(Utilities.SP_KEY_MINES);
+            mMineRecoveryCount = b.getInt(Utilities.SP_KEY_FOUND_MINES);
+            mMineErrorCount = b.getInt(Utilities.SP_KEY_MARKED_MINES);
+            mElapse = b.getInt(Utilities.SP_KEY_TIME);
+            String state = b.getString(Utilities.SP_KEY_STATE);
+            PlayState[] values = GameActivity.PlayState.values();
+            for(int i=0; i<values.length; i++) {
+                if (state.equals(values[i].name())) {
+                    sState = values[i];
+                    break;
+                } else {
+                    sState = PlayState.start;
+                }
+            }
+            prepareNeighbours();
+            clearSavedGame();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            mLoadSavedGame=false;
+            if (mPDiag != null) {
+                mPDiag.dismiss();
+                mPDiag = null;
+            }
+            mScore.setText(getString(R.string.score) + " : " + String.valueOf(mMineRecoveryCount));
+            mInfo.setText(getString(R.string.info) + " : " + M);
+            setAnnouncement();
+            mChronoTimer.setBase(SystemClock.elapsedRealtime() - mElapse);
+            mChronoTimer.start();
+            refreshCells();
+        }
+    }
+
+    private void startSaveGameTask(int grid, Cell[] cells, boolean noDiag) {
+        int elapsedTime = 0;
+        if (mChronoTimer != null) {
+            mChronoTimer.stop();
+            mFinalChronoText = mChronoTimer.getText().toString();
+            elapsedTime = (int)(SystemClock.elapsedRealtime() - mChronoTimer.getBase());
+        }
+        new SaveGameTask(this, grid, cells, elapsedTime, noDiag).execute();
+    }
+
+    private class SaveGameTask extends AsyncTask<Void, Void, Void> {
+        private int mGridN;
+        private Cell[] mCells;
+        private Context mContext;
+        private int mTime;
+        private boolean mShowDiag;
+        private ProgressDialog mPDiag;
+
+        public SaveGameTask(Context context, int grid, Cell[] cells, int elapsedTime, boolean noDiag) {
+            this.mContext = context;
+            this.mCells = cells;
+            this.mGridN = grid;
+            this.mTime = elapsedTime;
+            this.mShowDiag = noDiag;
+            mPDiag = null;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            if (mShowDiag) {
+                mPDiag = new ProgressDialog(mContext);
+                mPDiag.setCancelable(false);
+                mPDiag.setMessage(getString(R.string.saving));
+                mPDiag.show();
+            }
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Bundle b = new Bundle();
+            b.putInt(Utilities.SP_KEY_GRID, N);
+            b.putInt(Utilities.SP_KEY_MINES, M);
+            b.putInt(Utilities.SP_KEY_FOUND_MINES, mMineRecoveryCount);
+            b.putInt(Utilities.SP_KEY_MARKED_MINES, mMineErrorCount);
+            b.putInt(Utilities.SP_KEY_TIME, mTime);
+            b.putString(Utilities.SP_KEY_STATE, sState.name());
+            Utilities.getInstance().saveGame(mContext, this.mCells, b);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            if (mPDiag != null) {
+                mPDiag.dismiss();
+                mPDiag = null;
+            }
+            finishAfterTransition();
+        }
+    }
+
+    private void clearSavedGame() {
+        Utilities.getInstance().clearSavedGame(this);
     }
 }

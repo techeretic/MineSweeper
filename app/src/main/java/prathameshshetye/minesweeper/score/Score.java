@@ -1,4 +1,8 @@
-package prathameshshetye.minesweeper;
+package prathameshshetye.minesweeper.score;
+
+import android.content.Context;
+
+import prathameshshetye.minesweeper.R;
 
 /**
  * Created by p.shetye on 5/11/15.
@@ -74,5 +78,28 @@ public class Score {
 
     public void setWhen(long mWhen) {
         this.mWhen = mWhen;
+    }
+
+    public String getTimeDescrip(Context context) {
+        String strTimeTaken = "";
+        if (mTimeTaken < 60) {
+            strTimeTaken = String.format("%02d" + "%s", mTimeTaken % 60,
+                    context.getString(R.string.append_seconds));
+        } else {
+            strTimeTaken = String.format("%02d" + "%s" + "%02d" + "%s",
+                    mTimeTaken / 60, context.getString(R.string.append_minutes),
+                    mTimeTaken % 60, context.getString(R.string.append_seconds));
+        }
+        return strTimeTaken;
+    }
+
+    public String toString(Context context) {
+        return context.getString(R.string.share_1)
+                + mMines
+                + context.getString(R.string.share_2)
+                + mCells + "X" + mCells
+                + context.getString(R.string.share_3)
+                + getTimeDescrip(context)
+                + context.getString(R.string.share_4);
     }
 }

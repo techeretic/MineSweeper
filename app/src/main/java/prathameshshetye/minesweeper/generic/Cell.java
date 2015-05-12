@@ -1,4 +1,7 @@
-package prathameshshetye.minesweeper;
+package prathameshshetye.minesweeper.generic;
+
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 
 import java.util.HashSet;
 
@@ -6,17 +9,33 @@ import java.util.HashSet;
  * Created by p.shetye on 5/5/15.
  */
 public class Cell {
+    @SerializedName("number")
     private int mNum;
+
+    @SerializedName("IsMine")
     private boolean mIsMine;
+
+    @SerializedName("IsAnimated")
     private boolean mIsAnimated;
+
+    @SerializedName("IsRevealed")
     private boolean mIsRevealed;
+
+    @SerializedName("IsMineRecovered")
     private boolean mMineRecovered;
+
+    @SerializedName("IsMarkedAsMine")
     private boolean mIsMarkedAsMine;
+
+    @SerializedName("HasCausedExplosion")
     private boolean mCausedExplosion;
+
     private HashSet<Integer> mNeighbours;
+
+    @SerializedName("MinesCount")
     private int mMineCount;
 
-    Cell(int num, boolean isMine) {
+    public Cell(int num, boolean isMine) {
         mNum = num;
         mIsMine = isMine;
         mIsAnimated = false;
@@ -95,4 +114,15 @@ public class Cell {
         if (!mNeighbours.contains(val))
             mNeighbours.add(val);
     }
+
+    public static Cell fromJSONString(String json) {
+        Cell c = new Gson().fromJson(json, Cell.class);
+        c.mNeighbours = new HashSet<>();
+        return c;
+    }
+
+    public String toJSONString() {
+        return new Gson().toJson(this);
+    }
+
 }

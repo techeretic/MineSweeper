@@ -1,8 +1,6 @@
-package prathameshshetye.minesweeper;
+package prathameshshetye.minesweeper.game;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +9,9 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import prathameshshetye.minesweeper.R;
+import prathameshshetye.minesweeper.generic.Cell;
 
 /**
  * Created by prathamesh on 5/8/15.

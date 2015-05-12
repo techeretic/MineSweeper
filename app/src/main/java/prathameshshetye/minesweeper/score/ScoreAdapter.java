@@ -1,4 +1,4 @@
-package prathameshshetye.minesweeper;
+package prathameshshetye.minesweeper.score;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -13,6 +13,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+
+import prathameshshetye.minesweeper.R;
 
 /**
  * Created by p.shetye on 5/11/15.
@@ -48,24 +50,16 @@ public class ScoreAdapter extends RecyclerView.Adapter<ScoreAdapter.ViewHolder> 
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        int timeTaken = mScores.get(position).getTimeTaken();
-        String strTimeTaken = "";
-        if (timeTaken < 60) {
-            strTimeTaken = String.format("%02d" + "%s", timeTaken % 60,
-                    mContext.getString(R.string.append_seconds));
-        } else {
-            strTimeTaken = String.format("%02d" + "%s" + "%02d" + "%s",
-                    timeTaken / 60, mContext.getString(R.string.append_minutes),
-                    timeTaken % 60, mContext.getString(R.string.append_seconds));
-        }
-        holder.mTimeElapsed.setText(mContext.getString(R.string.completed_in) + strTimeTaken);
+        holder.mTimeElapsed.setText(mContext.getString(R.string.completed_in) + mScores.get(position).getTimeDescrip(mContext));
         holder.mDescrip.setText(mScores.get(position).getDescrip());
         holder.mMines.setText(String.valueOf(mScores.get(position).getMines()) + mContext.getString(R.string.cant_validate_2));
+
         int gridLength = mScores.get(position).getCells();
         holder.mGridSize.setText(String.valueOf(gridLength) + "x" + String.valueOf(gridLength) + mContext.getString(R.string.append_grid));
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");
-        Date resultdate = new Date(mScores.get(position).getWhen());
-        holder.mWhen.setText(sdf.format(resultdate));
+
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy hh:mm a");
+        Date resultDate = new Date(mScores.get(position).getWhen());
+        holder.mWhen.setText(sdf.format(resultDate));
     }
 
     @Override

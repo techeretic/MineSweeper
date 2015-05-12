@@ -32,7 +32,7 @@
     <string name="caught_mine">Cleared/Caught Mine</string>
     <string name="mine_indicator">M</string>
     <string name="confirm_exit">You\'re sure?</string>
-    <string name="confirm_exit_message">All progress will be lost.\nContinue?</string>
+    <string name="confirm_exit_message">All progress will be lost.\nContinue? OR You can save your progress to resume play later.</string>
     <string name="exit">EXIT</string>
     <string name="generic_cnt">2</string>
     <string name="mine_ind">No. of mines in any of the adjacent cells</string>
@@ -50,4 +50,17 @@
     <string name="append_minutes">&#160;min&#160;</string>
     <string name="append_seconds">&#160;sec</string>
     <string name="prefix_On">On&#160;</string>
+    <string name="saving">Saving...</string>
+    <string name="save_game">Save Game</string>
+    <string name="load_saved_game">Load Saved Game</string>
+
+    <string name="share_1">I found&#160;</string>
+    <string name="share_2">&#160;mines in a&#160;</string>
+    <string name="share_3">&#160;grid in&#160;</string>
+    <string name="share_4">&#160;in MineSweeper</string>
+    <string name="share_score">Share your MineSweeper score</string>
+    <string name="your_score">MineSweeper Score</string>
+
+    <string name="trans_new_game">NewGame</string>
+    <string name="trans_score">Score</string>
 </resources>

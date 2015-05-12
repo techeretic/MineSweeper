@@ -1,8 +1,9 @@
-package prathameshshetye.minesweeper;
+package prathameshshetye.minesweeper.generic;
 
 import android.app.Dialog;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.View;
 import android.view.Window;
@@ -11,6 +12,8 @@ import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+
+import prathameshshetye.minesweeper.R;
 
 /**
  * Created by prathamesh on 5/9/15.
@@ -31,7 +34,15 @@ public class Utilities {
 
     public static final String spGrid = "grid";
     public static final String spMines = "mines";
+    public static final int RESULT_SCORE = 100;
+    public static final String SAVED_GAME = "SAVED_GAME";
 
+    public static final String SP_KEY_GRID = "GRID";
+    public static final String SP_KEY_TIME = "ELAPSED_TIME";
+    public static final String SP_KEY_STATE = "STATE";
+    public static final String SP_KEY_MINES = "MINES";
+    public static final String SP_KEY_MARKED_MINES = "MARKED_MINES";
+    public static final String SP_KEY_FOUND_MINES = "FOUND_MINES";
     private TextView mTxtGridSize;
     private TextView mTxtMines;
 
@@ -197,4 +208,58 @@ public class Utilities {
         d.show();
     }
 
+    public void saveGame(Context context, Cell[] cells, Bundle options) {
+        SharedPreferences sp = context.getApplicationContext().getSharedPreferences(SAVED_GAME, Context.MODE_PRIVATE);
+        sp.edit().putInt(SP_KEY_GRID, options.getInt(SP_KEY_GRID)).apply();
+        sp.edit().putInt(SP_KEY_TIME, options.getInt(SP_KEY_TIME)).apply();
+        sp.edit().putString(SP_KEY_STATE, options.getString(SP_KEY_STATE)).apply();
+        sp.edit().putInt(SP_KEY_MINES, options.getInt(SP_KEY_MINES)).apply();
+        sp.edit().putInt(SP_KEY_MARKED_MINES, options.getInt(SP_KEY_MARKED_MINES)).apply();
+        sp.edit().putInt(SP_KEY_FOUND_MINES, options.getInt(SP_KEY_FOUND_MINES)).apply();
+        for(int i=0; i<cells.length; i++) {
+            sp.edit().putString(String.valueOf(i), cells[i].toJSONString()).apply();
+        }
+    }
+
+    public Cell[] retrieveSavedGame(Context context) {
+        SharedPreferences sp = context.getApplicationContext().getSharedPreferences(SAVED_GAME, Context.MODE_PRIVATE);
+        final int N = sp.getInt(SP_KEY_GRID, 0);
+        if (N==0) {
+            return null;
+        }
+        Cell [] result = new Cell[N*N];
+        for(int i=0; i<(N*N); i++) {
+            try {
+                result[i] = Cell.fromJSONString(sp.getString(String.valueOf(i),""));
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return result;
+    }
+
+    public Bundle getSavedProperties(Context context) {
+        SharedPreferences sp = context.getApplicationContext().getSharedPreferences(SAVED_GAME, Context.MODE_PRIVATE);
+        Bundle result = new Bundle();
+        result.putInt(SP_KEY_GRID, sp.getInt(SP_KEY_GRID, 0));
+        result.putInt(SP_KEY_TIME, sp.getInt(SP_KEY_TIME, 0));
+        result.putString(SP_KEY_STATE, sp.getString(SP_KEY_STATE, ""));
+        result.putInt(SP_KEY_MINES, sp.getInt(SP_KEY_MINES, 0));
+        result.putInt(SP_KEY_MARKED_MINES, sp.getInt(SP_KEY_MARKED_MINES, 0));
+        result.putInt(SP_KEY_FOUND_MINES, sp.getInt(SP_KEY_FOUND_MINES, 0));
+        return result;
+    }
+
+    public void clearSavedGame(Context context) {
+        SharedPreferences sp = context.getApplicationContext().getSharedPreferences(SAVED_GAME, Context.MODE_PRIVATE);
+        sp.edit().clear().commit();
+    }
+
+    public boolean anyPriorSavedGame(Context context) {
+        SharedPreferences sp = context.getApplicationContext().getSharedPreferences(SAVED_GAME, Context.MODE_PRIVATE);
+        if (sp.contains(SP_KEY_GRID)) {
+            return true;
+        }
+        return false;
+    }
 }
