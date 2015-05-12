@@ -652,6 +652,7 @@ public class GameActivity extends AppCompatActivity {
                     System.currentTimeMillis(),
                     ""
             ));
+            setResult(RESULT_OK);
         }
     }
 

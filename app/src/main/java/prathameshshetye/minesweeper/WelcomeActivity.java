@@ -5,6 +5,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
@@ -83,7 +84,7 @@ public class WelcomeActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == Utilities.RESULT_SCORE) {
             if (resultCode == RESULT_OK) {
-                mDoShowScore = true;
+                mDoShowScore = false;
                 showScoreButton(mDoShowScore);
             }
         }
