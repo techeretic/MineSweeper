@@ -100,6 +100,7 @@ public class Score {
                 + mCells + "X" + mCells
                 + context.getString(R.string.share_3)
                 + getTimeDescrip(context)
-                + context.getString(R.string.share_4);
+                + context.getString(R.string.share_4)
+                + "(https://goo.gl/rmi66T)";
     }
 }

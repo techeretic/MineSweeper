@@ -499,14 +499,6 @@ public class GameActivity extends AppCompatActivity {
         return false;
     }
 
-    private void showLegendDialog() {
-        Dialog dialog = new Dialog(this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.legend);
-        dialog.setCancelable(true);
-        dialog.show();
-    }
-
     private void announceToast(String toast) {
         if (mToast != null) {
             mToast.cancel();
